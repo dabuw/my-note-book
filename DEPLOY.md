@@ -44,6 +44,30 @@ Docker 容器 notetaker（gunicorn + Flask，容器内 5001）
   **不要改用 `X-Forwarded-For` 判断配额** —— 该头由 `$proxy_add_x_forwarded_for` 追加，客户端可自行注入前缀绕过限制。
 - 游客删除自己的笔记后配额会释放，可以再建一条。因为游客笔记始终私密，这不构成内容滥用风险。
 
+## AI 功能配置
+
+AI 生成与翻译走**任意 OpenAI 兼容的 chat-completions 接口**。三个变量（旧的 `GITHUB_*` 名字仍作为回退生效）：
+
+```bash
+LLM_BASE_URL=https://api.deepseek.com/v1   # 或 https://models.github.ai/inference
+LLM_MODEL=deepseek-chat
+LLM_API_KEY=sk-xxx                         # 或 ghp_xxx
+LLM_TIMEOUT=60
+```
+
+⚠️ **接入非 GitHub 服务商时务必显式设置 `LLM_MODEL`。** 老变量 `GITHUB_MODEL` 的默认值是 `openai/gpt-4.1-mini`，如果不设 `LLM_MODEL`，这个 GitHub 的模型名会被原样发给 DeepSeek，导致 404。`.env.example` 已把 `GITHUB_MODEL` 注释掉来规避这个坑。
+
+**没配 API Key 时不会崩**，而是优雅降级：
+
+| 接口 | 行为 |
+|---|---|
+| `POST /api/generate-notes` | **200** + `ai_used=false` + `warning`，标题/正文/标签由本地逻辑生成，**日期时间仍会被正确解析** |
+| `POST /api/translate` | **503** + `code=ai_not_configured`（翻译没有有意义的离线替代，所以明确报错） |
+
+前端对应显示黄色警告条（生成）或明确的未配置提示（翻译），而不是红色报错。
+
+> 依赖提示：`requirements.txt` 里钉了 `httpx==0.27.2`。`openai==1.51.2` 会向 `httpx.Client` 传 `proxies=`，而 httpx 0.28 移除了该参数 —— 不钉版本会报 `Client.__init__() got an unexpected keyword argument 'proxies'`，AI 全挂。另外 `src/llm.py` 是「SDK 优先、纯 HTTP 兜底」双路径，即使 SDK 因版本问题不可用，AI 仍能工作。
+
 ## 部署 / 更新流程
 
 ```bash

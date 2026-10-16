@@ -283,6 +283,24 @@
             border: 1px solid #c3e6cb;
         }
 
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ffeeba;
+            line-height: 1.6;
+        }
+
+        .warning code {
+            background: rgba(0, 0, 0, 0.06);
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .main-content {
@@ -1276,7 +1294,18 @@
                     // Clear the natural language input
                     document.getElementById('naturalLanguageInput').value = '';
 
-                    this.showMessage('Notes generated successfully! You can now edit and save them.', 'success');
+                    if (data.ai_used === false) {
+                        // The backend degraded to the local date/time parser.
+                        // Show a warning but keep the generated draft, because
+                        // it is still usable.
+                        this.showMessage(
+                            '⚠️ 未使用 AI，已改用本地解析生成（你仍可编辑后保存）。<br>原因：' +
+                            this.escapeHtml(data.warning || '未知'),
+                            'warning'
+                        );
+                    } else {
+                        this.showMessage('Notes generated successfully! You can now edit and save them.', 'success');
+                    }
                     
                 } catch (error) {
                     this.showMessage(`Error generating notes: ${error.message}`, 'error');

@@ -14,47 +14,43 @@ generate_bp = Blueprint('generate', __name__)
 @generate_bp.route('/generate-notes', methods=['POST'])
 @login_required
 def generate_notes():
+    """Turn free-form text into a structured note.
+
+    Request JSON:
+        {"user_input": "...", "language": "Chinese"|"English"}
+
+    Response JSON:
+        {"title", "content", "tags", "event_date", "event_time",
+         "ai_used": bool, "warning": str|omitted}
+
+    When the LLM is unavailable (no API key, network error, bad model name) the
+    note is still produced by the local date/time parser and returned with
+    HTTP 200 plus `ai_used: false` and a `warning`, so the feature degrades
+    instead of breaking. Only unexpected server-side faults return 5xx.
     """
-    Generate structured notes from natural language input using LLM.
-    
-    Expected JSON body:
-    {
-        "user_input": "natural language input",
-        "language": "Chinese" or "English" (optional, defaults to "English")
-    }
-    
-    Returns:
-    {
-        "title": "generated title",
-        "content": "structured notes content", 
-        "tags": ["tag1", "tag2", "tag3"]
-    }
-    """
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     user_input = data.get('user_input')
-    language = data.get('language', 'Chinese')  # Changed default to Chinese
-    
-    if not user_input:
+    language = data.get('language', 'Chinese')
+
+    if not user_input or not str(user_input).strip():
         return jsonify({'error': 'No user_input provided'}), 400
 
     try:
         result = process_user_notes(language, user_input)
-        
-        # Check if there was an error in processing
-        if 'error' in result:
-            return jsonify(result), 500
-        
-        # Convert the result format to match frontend expectations    
-        # The process_user_notes returns: {"Title": "...", "Notes": "...", "Tags": [...], "Event_Date": "...", "Event_Time": "..."}
-        # Frontend expects: {"title": "...", "content": "...", "tags": [...], "event_date": "...", "event_time": "..."}
+
         response = {
             "title": result.get("Title", ""),
             "content": result.get("Notes", ""),
             "tags": result.get("Tags", []),
             "event_date": result.get("Event_Date", None),
-            "event_time": result.get("Event_Time", None)
+            "event_time": result.get("Event_Time", None),
+            "ai_used": bool(result.get("ai_used", False)),
         }
-            
+        if result.get("warning"):
+            response["warning"] = result["warning"]
+        if result.get("ai_used") is None:
+            response["ai_used"] = False
+
         return jsonify(response)
     except Exception as e:
-        return jsonify({'error': f'Note generation failed: {str(e)}'}), 500
+        return jsonify({'error': 'Note generation failed: %s' % str(e)}), 500

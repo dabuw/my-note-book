@@ -169,33 +169,37 @@ def process_user_notes(language, user_input):
             if not parsed_result.get('Event_Time') and fallback_time:
                 parsed_result['Event_Time'] = fallback_time
         
+        parsed_result['ai_used'] = True
         return parsed_result
         
     except json.JSONDecodeError:
-        # If JSON parsing fails, try fallback parsing for date/time and return basic structure
-        fallback_date, fallback_time = parse_date_time_fallback(user_input)
-        
-        return {
-            "Title": "Generated Note",
-            "Notes": user_input,
-            "Tags": [],
-            "Event_Date": fallback_date,
-            "Event_Time": fallback_time,
-            "error": "Failed to parse LLM response as JSON, used fallback parsing",
-            "raw_response": response_content
-        }
+        # The model answered, but not with usable JSON. Degrade to the local
+        # date/time parser instead of failing the whole request.
+        return _fallback_result(
+            user_input,
+            "AI 返回的内容不是有效 JSON，已改用本地日期时间解析",
+        )
     except Exception as e:
-        # If LLM call fails, try fallback parsing
-        fallback_date, fallback_time = parse_date_time_fallback(user_input)
-        
-        return {
-            "Title": "Generated Note", 
-            "Notes": user_input,
-            "Tags": [],
-            "Event_Date": fallback_date,
-            "Event_Time": fallback_time,
-            "error": f"LLM call failed: {str(e)}, used fallback parsing"
-        }
+        # No key configured, network problem, bad model name, ... Either way the
+        # local parser still produces something useful, so degrade gracefully
+        # and let the caller surface a warning rather than a hard error.
+        return _fallback_result(user_input, str(e))
+
+
+def _fallback_result(user_input, reason):
+    """Build a usable note without the LLM, and report why AI was skipped."""
+    fallback_date, fallback_time = parse_date_time_fallback(user_input)
+    return {
+        "Title": "Generated Note",
+        "Notes": user_input,
+        "Tags": [],
+        "Event_Date": fallback_date,
+        "Event_Time": fallback_time,
+        "ai_used": False,
+        "warning": reason,
+    }
+
+
 # Run the main function if this script is executed
 if __name__ == "__main__":
     result = process_user_notes("Chinese", "Get up tomorrow 7am")
