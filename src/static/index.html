@@ -369,35 +369,46 @@
         .tag-item {
             display: inline-block;
             padding: 4px 8px;
-            background: linear-gradient(135deg, #177a52 0%, #06281d 100%);
-            color: white;
+            background: #d8f0e2;
+            color: #0d5a3d;
             border-radius: 12px;
             font-size: 11px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
-            border: 1px solid transparent;
+            border: 1px solid #b3ddc6;
             text-decoration: none;
             line-height: 1.2;
         }
 
+        /* Frequency is expressed by the tint, not by `opacity`.
+           Fading a light pill with opacity would wash it out into the amber
+           panel behind it and drag the label's contrast down with it, so the
+           text colour stays fixed and only the background varies.
+           These rules must stay ABOVE :hover / .active: they have identical
+           specificity, so source order decides the winner. */
+        .tag-item.size-xs { font-size: 10px; background: #eaf7f0; }
+        .tag-item.size-sm { font-size: 11px; background: #e2f4ea; }
+        .tag-item.size-md { font-size: 12px; background: #d8f0e2; }
+        .tag-item.size-lg { font-size: 13px; background: #cdeada; font-weight: 600; }
+        .tag-item.size-xl { font-size: 14px; background: #c2e4d2; font-weight: 700; }
+
         .tag-item:hover {
             transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 4px 12px rgba(23, 122, 82, 0.28);
-            background: linear-gradient(135deg, #12603f 0%, #08301f 100%);
+            background: #b9e5cd;
+            border-color: #8ccfae;
+            box-shadow: 0 4px 12px rgba(23, 122, 82, 0.2);
         }
 
+        /* Selected tag: solid brand green so it still stands out from the
+           light pills around it. */
         .tag-item.active {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
+            background: #0f7a54;
+            color: #fff;
+            border-color: #0f7a54;
+            box-shadow: 0 2px 8px rgba(15, 122, 84, 0.35);
             transform: scale(1.05);
         }
-
-        .tag-item.size-xs { font-size: 10px; opacity: 0.7; }
-        .tag-item.size-sm { font-size: 11px; opacity: 0.8; }
-        .tag-item.size-md { font-size: 12px; opacity: 0.9; }
-        .tag-item.size-lg { font-size: 13px; opacity: 1.0; font-weight: 600; }
-        .tag-item.size-xl { font-size: 14px; opacity: 1.0; font-weight: 700; }
 
         .tag-stats {
             padding-top: 8px;
