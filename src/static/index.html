@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NoteTaker - Your Personal Note Manager</title>
+    <title data-i18n="doc.title">NoteTaker - 个人笔记管理</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <style>
         * {
@@ -14,12 +14,15 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            /* Deep forest -> fresh green, fixed so it does not band on scroll. */
+            background: linear-gradient(160deg, #06281d 0%, #0d4a34 38%, #177a52 72%, #1f9d6b 100%);
+            background-attachment: fixed;
             min-height: 100vh;
             color: #333;
         }
 
         .container {
+            position: relative;  /* anchor for the language switch */
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
@@ -83,13 +86,13 @@
 
         .search-box:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #177a52;
         }
 
         .new-note-btn {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #177a52 0%, #06281d 100%);
             color: white;
             border: none;
             border-radius: 10px;
@@ -121,12 +124,12 @@
         }
 
         .note-item:hover {
-            border-color: #667eea;
+            border-color: #177a52;
             transform: translateX(5px);
         }
 
         .note-item.active {
-            border-color: #667eea;
+            border-color: #177a52;
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
         }
 
@@ -222,7 +225,7 @@
 
         .form-input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #177a52;
         }
 
         .form-textarea {
@@ -240,7 +243,7 @@
 
         .form-textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #177a52;
         }
 
         .empty-state {
@@ -332,12 +335,12 @@
         }
 
         .notes-list::-webkit-scrollbar-thumb {
-            background: #667eea;
+            background: #177a52;
             border-radius: 3px;
         }
 
         .notes-list::-webkit-scrollbar-thumb:hover {
-            background: #5a6fd8;
+            background: #12603f;
         }
 
         /* Tag Cloud Styles */
@@ -354,7 +357,7 @@
         .tag-item {
             display: inline-block;
             padding: 4px 8px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #177a52 0%, #06281d 100%);
             color: white;
             border-radius: 12px;
             font-size: 11px;
@@ -369,7 +372,7 @@
         .tag-item:hover {
             transform: translateY(-2px) scale(1.05);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-            background: linear-gradient(135deg, #5a6fd8 0%, #6a5494 100%);
+            background: linear-gradient(135deg, #12603f 0%, #08301f 100%);
         }
 
         .tag-item.active {
@@ -432,7 +435,7 @@
 
         .btn-auth {
             background: #fff;
-            color: #4f46e5;
+            color: #0f7a54;
             font-weight: 600;
             padding: 6px 14px;
             font-size: 13px;
@@ -460,8 +463,8 @@
         }
 
         .note-badge.mine {
-            background: #e0e7ff;
-            color: #4338ca;
+            background: #d1e7dd;
+            color: #0d4a34;
         }
 
         /* ---- read-only banner ---- */
@@ -502,7 +505,7 @@
 
         .modal h3 {
             margin-bottom: 8px;
-            color: #4f46e5;
+            color: #0f7a54;
             font-size: 18px;
         }
 
@@ -556,9 +559,9 @@
             margin: 12px 0 4px;
             padding: 10px 12px;
             border-radius: 8px;
-            background: #eef2ff;
-            border-left: 4px solid #6366f1;
-            color: #4338ca;
+            background: #e8f5ee;
+            border-left: 4px solid #198754;
+            color: #0d4a34;
             font-size: 13px;
             line-height: 1.6;
         }
@@ -598,13 +601,56 @@
             height: 16px;
             vertical-align: middle;
         }
+
+        /* ---- language switch, pinned to the top-right corner ---- */
+        .lang-switch {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 50;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            color: #06281d;
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 999px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .lang-switch:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+        }
+
+        .lang-switch:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 640px) {
+            .lang-switch {
+                top: 12px;
+                right: 12px;
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <button class="lang-switch" id="langSwitch" type="button"
+                data-i18n-title="lang.switchTitle" title="切换到英文">🌐 English</button>
+
         <div class="header">
             <h1>📝 NoteTaker</h1>
-            <p>Organize your thoughts, capture your ideas</p>
+            <p data-i18n="header.tagline">记录想法，随手写下</p>
             <div class="auth-bar">
                 <span class="role-badge" id="roleBadge">👤 游客模式</span>
                 <span class="role-hint" id="roleHint"></span>
@@ -614,19 +660,21 @@
 
         <div class="main-content">
             <div class="sidebar">
-                <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search notes...">
-                <button class="new-note-btn" id="newNoteBtn">✨ New Note</button>
+                <input type="text" class="search-box" id="searchBox"
+                       data-i18n-placeholder="search.placeholder" placeholder="🔍 搜索笔记...">
+                <button class="new-note-btn" id="newNoteBtn" data-i18n="btn.newNote">✨ 新建笔记</button>
 
                 <!-- Shown when guest writing is disabled (GUEST_NOTE_LIMIT=0) -->
-                <div id="guestNotice" class="guest-notice" style="display:none;">
-                    📖 本站为只读展示，笔记内容由管理员维护。
-                </div>
+                <div id="guestNotice" class="guest-notice" style="display:none;"
+                     data-i18n="guest.notice">📖 本站为只读展示，笔记内容由管理员维护。</div>
                 
                 <!-- Tag Cloud Section -->
                 <div style="margin: 15px 0; padding: 10px; background: #fff8dc; border-radius: 8px; border-left: 4px solid #ffa500;">
-                    <h4 style="margin: 0 0 10px 0; color: #ff8c00; font-size: 14px;">🏷️ Tag Cloud</h4>
+                    <h4 style="margin: 0 0 10px 0; color: #ff8c00; font-size: 14px;"
+                        data-i18n="tagCloud.title">🏷️ 标签云</h4>
                     <div id="tagCloud" class="tag-cloud">
-                        <div class="loading" style="text-align: center; padding: 10px; font-size: 12px; color: #999;">Loading tags...</div>
+                        <div class="loading" style="text-align: center; padding: 10px; font-size: 12px; color: #999;"
+                             data-i18n="tagCloud.loading">标签加载中...</div>
                     </div>
                     <div id="tagStats" class="tag-stats" style="margin-top: 8px; font-size: 11px; color: #666; display: none;">
                         <span id="tagStatsText"></span>
@@ -634,63 +682,58 @@
                 </div>
 
                 <!-- Generate Notes Section (owner only; hidden from guests) -->
-                <div id="aiPanel" style="margin: 15px 0; padding: 10px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #4f46e5;">
-                    <h4 style="margin: 0 0 10px 0; color: #4f46e5; font-size: 14px;">🤖 Generate Notes</h4>
-                    <textarea id="naturalLanguageInput" placeholder="Describe what happened today, your thoughts, or any information you want to turn into a note..."
+                <div id="aiPanel" style="margin: 15px 0; padding: 10px; background: #f2f9f5; border-radius: 8px; border-left: 4px solid #0f7a54;">
+                    <h4 style="margin: 0 0 10px 0; color: #0f7a54; font-size: 14px;"
+                        data-i18n="ai.title">🤖 智能生成笔记</h4>
+                    <textarea id="naturalLanguageInput" data-i18n-placeholder="ai.placeholder"
+                              placeholder="描述今天发生了什么、你的想法，或任何想变成笔记的内容..."
                               style="width: 100%; min-height: 80px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
-                    <button class="btn" id="generateNotesBtn" style="margin-top: 8px; width: 100%; font-size: 13px; padding: 8px;">🚀 Generate Notes</button>
+                    <button class="btn" id="generateNotesBtn" style="margin-top: 8px; width: 100%; font-size: 13px; padding: 8px;"
+                            data-i18n="ai.button">🚀 生成笔记</button>
                 </div>
                 
                 <div class="notes-list" id="notesList">
-                    <div class="loading">Loading notes...</div>
+                    <div class="loading" data-i18n="notes.loading">笔记加载中...</div>
                 </div>
             </div>
 
             <div class="note-editor">
                 <div class="editor-header">
-                    <h2 class="editor-title" id="editorTitle">Select a note to edit</h2>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <select id="translateLang" class="form-input" style="width:140px; padding:6px;">
-                            <option value="zh-CN">Chinese (简体)</option>
-                            <option value="zh-TW">Chinese (繁體)</option>
-                            <option value="ja-JP">Japanese</option>
-                            <option value="es-ES">Spanish</option>
-                            <option value="en-US">English</option>
-                        </select>
-                        <button class="btn" id="translateBtn">🌐 Translate</button>
-                        <div class="editor-actions" id="editorActions" style="display: none;">
-                            <button class="btn btn-save" id="saveBtn">💾 Save</button>
-                            <button class="btn btn-delete" id="deleteBtn">🗑️ Delete</button>
-                        </div>
+                    <h2 class="editor-title" id="editorTitle">选择一条笔记开始编辑</h2>
+                    <div class="editor-actions" id="editorActions" style="display: none;">
+                        <button class="btn btn-save" id="saveBtn" data-i18n="btn.save">💾 保存</button>
+                        <button class="btn btn-delete" id="deleteBtn" data-i18n="btn.delete">🗑️ 删除</button>
                     </div>
                 </div>
 
                 <div id="messageArea"></div>
-                <div id="translationArea" style="margin:10px 0; display:none;"></div>
                 <div id="readonlyBanner" class="readonly-banner" style="display:none;"></div>
 
                 <div id="editorForm" style="display: none;">
                     <div class="form-group">
-                        <label class="form-label" for="noteTitle">Title</label>
-                        <input type="text" class="form-input" id="noteTitle" placeholder="Enter note title...">
+                        <label class="form-label" for="noteTitle" data-i18n="form.title">标题</label>
+                        <input type="text" class="form-input" id="noteTitle"
+                               data-i18n-placeholder="form.titlePlaceholder" placeholder="输入笔记标题...">
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="noteContent">Content</label>
-                        <textarea class="form-textarea" id="noteContent" placeholder="Start writing your note..."></textarea>
+                        <label class="form-label" for="noteContent" data-i18n="form.content">内容</label>
+                        <textarea class="form-textarea" id="noteContent"
+                                  data-i18n-placeholder="form.contentPlaceholder" placeholder="开始写你的笔记..."></textarea>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="noteTags">Tags (comma separated)</label>
-                        <input type="text" class="form-input" id="noteTags" placeholder="e.g. work,ideas,personal">
+                        <label class="form-label" for="noteTags" data-i18n="form.tags">标签（用逗号分隔）</label>
+                        <input type="text" class="form-input" id="noteTags"
+                               data-i18n-placeholder="form.tagsPlaceholder" placeholder="例如：工作,灵感,生活">
                     </div>
 
                     <div class="form-group" style="display:flex; gap:10px;">
                         <div style="flex:1;">
-                            <label class="form-label" for="noteEventDate">Event Date</label>
+                            <label class="form-label" for="noteEventDate" data-i18n="form.eventDate">事件日期</label>
                             <input type="date" class="form-input" id="noteEventDate">
                         </div>
                         <div style="width:160px;">
-                            <label class="form-label" for="noteEventTime">Event Time</label>
+                            <label class="form-label" for="noteEventTime" data-i18n="form.eventTime">事件时间</label>
                             <input type="time" class="form-input" id="noteEventTime">
                         </div>
                     </div>
@@ -698,14 +741,14 @@
                     <div class="form-group" id="publicToggleGroup" style="display:none;">
                         <label class="public-toggle" for="notePublic">
                             <input type="checkbox" id="notePublic">
-                            <span>🌐 公开这条笔记（其他访客可见）</span>
+                            <span data-i18n="form.public">🌐 公开这条笔记（其他访客可见）</span>
                         </label>
                     </div>
                 </div>
 
                 <div class="empty-state" id="emptyState">
-                    <h3>Welcome to NoteTaker!</h3>
-                    <p>Select an existing note or create a new one to get started.</p>
+                    <h3 data-i18n="empty.title">欢迎使用 NoteTaker！</h3>
+                    <p data-i18n="empty.desc">从左侧选择一条笔记，或新建一条开始。</p>
                 </div>
             </div>
         </div>
@@ -733,21 +776,207 @@
 
     <div class="modal-overlay" id="loginModal">
         <div class="modal">
-            <h3>🔑 输入密码</h3>
-            <p class="modal-desc">
-                登录后可查看全部笔记、无限创建与修改，并使用 AI 生成 / 翻译功能。
+            <h3 data-i18n="login.title">🔑 输入密码</h3>
+            <p class="modal-desc" data-i18n="login.desc">
+                登录后可查看全部笔记、无限创建与修改，并使用 AI 生成功能。
             </p>
             <input type="password" class="form-input" id="loginPassword"
-                   placeholder="请输入密码" autocomplete="current-password">
+                   data-i18n-placeholder="login.placeholder" placeholder="请输入密码"
+                   autocomplete="current-password">
             <div class="modal-error" id="loginError"></div>
             <div class="modal-actions">
-                <button class="btn" id="loginCancelBtn" type="button">取消</button>
-                <button class="btn btn-save" id="loginSubmitBtn" type="button">登录</button>
+                <button class="btn" id="loginCancelBtn" type="button" data-i18n="login.cancel">取消</button>
+                <button class="btn btn-save" id="loginSubmitBtn" type="button" data-i18n="login.submit">登录</button>
             </div>
         </div>
     </div>
 
     <script>
+
+        // ==================================================================
+        // Internationalisation
+        // ------------------------------------------------------------------
+        // Chinese is the source language: it lives inline in the HTML and in
+        // MSG.zh. Only the English strings are listed as overrides, and
+        // applyLanguage() snapshots the original Chinese the first time it
+        // runs, so switching back and forth is lossless.
+        // ==================================================================
+        const I18N_EN = {
+            'doc.title': 'NoteTaker - Personal Note Manager',
+            'header.tagline': 'Capture your thoughts as they come',
+            'lang.switchTitle': '切换到中文',
+            'search.placeholder': '🔍 Search notes...',
+            'btn.newNote': '✨ New Note',
+            'guest.notice': '📖 Read-only showcase. Notes are maintained by the administrator.',
+            'tagCloud.title': '🏷️ Tag Cloud',
+            'tagCloud.loading': 'Loading tags...',
+            'ai.title': '🤖 Generate Notes',
+            'ai.placeholder': 'Describe what happened today, your thoughts, or anything you want turned into a note...',
+            'ai.button': '🚀 Generate Notes',
+            'notes.loading': 'Loading notes...',
+            'btn.save': '💾 Save',
+            'btn.delete': '🗑️ Delete',
+            'form.title': 'Title',
+            'form.titlePlaceholder': 'Enter note title...',
+            'form.content': 'Content',
+            'form.contentPlaceholder': 'Start writing your note...',
+            'form.tags': 'Tags (comma separated)',
+            'form.tagsPlaceholder': 'e.g. work,ideas,personal',
+            'form.eventDate': 'Event Date',
+            'form.eventTime': 'Event Time',
+            'form.public': '🌐 Make this note public (visible to other visitors)',
+            'empty.title': 'Welcome to NoteTaker!',
+            'empty.desc': 'Pick a note on the left, or create a new one to get started.',
+            'login.title': '🔑 Enter password',
+            'login.desc': 'Sign in to see every note, create and edit without limits, and use AI generation.',
+            'login.placeholder': 'Enter password',
+            'login.cancel': 'Cancel',
+            'login.submit': 'Sign in'
+        };
+
+        const MSG = {
+            zh: {
+                'lang.switchLabel': '🌐 English',
+                'editor.selectPrompt': '选择一条笔记开始编辑',
+                'role.loggedIn': '✅ 已登录（完整权限）',
+                'role.readonly': '📖 只读浏览',
+                'role.guest': '👤 游客模式',
+                'role.hintReadonly': '笔记由管理员维护',
+                'role.hintQuota': '可创建 {0} 条笔记，仅自己可见',
+                'role.hintQuotaUsed': '创建额度已用完，需要获得管理员权限',
+                'auth.login': '🔑 输入密码',
+                'auth.adminLogin': '🔑 管理员登录',
+                'auth.logout': '🚪 退出登录',
+                'login.enterPassword': '请输入密码',
+                'login.submitting': '登录中...',
+                'login.failed': '登录请求失败，请重试',
+                'login.success': '登录成功，已获得完整权限',
+                'login.submit': '登录',
+                'logout.success': '已退出登录，回到游客模式',
+                'err.auth_required': '该功能需要输入密码后使用',
+                'err.invalid_password': '密码错误',
+                'err.too_many_attempts': '尝试次数过多，请稍后再试',
+                'err.guest_write_disabled': '本站为只读展示，创建笔记需要获得管理员权限',
+                'err.guest_limit_reached': '游客模式最多只能创建 {0} 条笔记，需要获得管理员权限',
+                'err.forbidden': '没有权限执行该操作',
+                'err.ai_not_configured': 'AI 未配置：请在服务器 .env 中设置 LLM_API_KEY',
+                'err.ai_call_failed': 'AI 调用失败，请稍后重试',
+                'err.text_too_long': '内容过长，请缩短后重试',
+                'err.generic': '操作失败，请稍后重试',
+                'prompt.readonlyLogin': '本站为只读展示，请输入管理员密码',
+                'prompt.quotaLogin': '游客创建额度已用完，请输入密码继续',
+                'msg.loadingNotes': '笔记加载中...',
+                'msg.loadNotesFailed': '加载笔记失败：{0}',
+                'msg.noNotes': '还没有笔记，创建第一条吧',
+                'msg.noSearchResult': '没有找到匹配的笔记',
+                'msg.enterTitleOrContent': '请输入标题或内容',
+                'msg.saveSuccess': '笔记已保存',
+                'msg.saveError': '保存笔记出错：{0}',
+                'msg.enterGenInput': '请输入要生成笔记的内容',
+                'msg.generating': '正在生成结构化笔记...',
+                'msg.generateButton': '🚀 生成笔记',
+                'msg.generatingButton': '🔄 生成中...',
+                'msg.genDegraded': '⚠️ 未使用 AI，已改用本地解析生成（仍可编辑后保存）。<br>原因：{0}',
+                'msg.genSuccess': '笔记生成成功，可以编辑后保存了',
+                'msg.genError': '生成笔记出错：{0}',
+                'msg.unknownReason': '未知',
+                'msg.confirmDelete': '确定要删除这条笔记吗？',
+                'msg.deleteSuccess': '笔记已删除',
+                'msg.deleteError': '删除笔记出错：{0}',
+                'msg.tagStatsFailed': '标签统计加载失败',
+                'msg.tagNoTags': '还没有标签，创建带标签的笔记后就会显示在这里',
+                'msg.tagNoneFor': '没有找到标签为「{0}」的笔记',
+                'msg.searchingTag': '正在搜索标签：{0}',
+                'msg.tagFilterError': '按标签筛选出错：{0}',
+                'msg.filteredTitle': '📋 按「{0}」筛选 - 选择一条笔记',
+                'msg.filterHeader': '🏷️ 按标签筛选："{0}"（{1} 条）',
+                'msg.clearFilter': '✕ 清除筛选',
+                'msg.tagUniqueCount': '{0} 个标签，共 {1} 次使用',
+                'msg.readonlyBanner': '👀 这是他人公开的笔记，你只能查看。你可以创建自己的笔记，或输入密码后编辑全部内容。',
+                'msg.readonlyBannerRO': '👀 这是公开的笔记，你只能查看。输入管理员密码后可编辑全部内容。',
+                'msg.newNoteTitle': '新建笔记',
+                'msg.untitled': '未命名笔记',
+                'msg.untitledShort': '未命名',
+                'msg.noContent': '暂无内容',
+                'badge.public': '公开',
+                'badge.private': '私密',
+                'badge.mine': '我的',
+                'date.today': '今天',
+                'date.yesterday': '昨天',
+                'date.daysAgo': '{0} 天前'
+            },
+            en: {
+                'lang.switchLabel': '🌐 中文',
+                'editor.selectPrompt': 'Select a note to edit',
+                'role.loggedIn': '✅ Signed in (full access)',
+                'role.readonly': '📖 Read-only',
+                'role.guest': '👤 Guest mode',
+                'role.hintReadonly': 'Notes are maintained by the administrator',
+                'role.hintQuota': 'You can create {0} note(s), visible only to you',
+                'role.hintQuotaUsed': 'Guest quota used up; administrator access required',
+                'auth.login': '🔑 Enter password',
+                'auth.adminLogin': '🔑 Administrator sign-in',
+                'auth.logout': '🚪 Sign out',
+                'login.enterPassword': 'Please enter the password',
+                'login.submitting': 'Signing in...',
+                'login.failed': 'Sign-in request failed, please retry',
+                'login.success': 'Signed in. Full access granted.',
+                'login.submit': 'Sign in',
+                'logout.success': 'Signed out. Back to guest mode.',
+                'err.auth_required': 'This feature requires the password',
+                'err.invalid_password': 'Incorrect password',
+                'err.too_many_attempts': 'Too many attempts, please try again later',
+                'err.guest_write_disabled': 'This site is a read-only showcase; creating notes requires administrator access',
+                'err.guest_limit_reached': 'Guests may create at most {0} note(s); administrator access is required',
+                'err.forbidden': 'You do not have permission to do this',
+                'err.ai_not_configured': 'AI is not configured: set LLM_API_KEY in the server .env',
+                'err.ai_call_failed': 'The AI call failed, please try again later',
+                'err.text_too_long': 'Text is too long, please shorten it',
+                'err.generic': 'Something went wrong, please try again',
+                'prompt.readonlyLogin': 'Read-only showcase, please enter the administrator password',
+                'prompt.quotaLogin': 'Guest quota used up, please enter the password to continue',
+                'msg.loadingNotes': 'Loading notes...',
+                'msg.loadNotesFailed': 'Could not load notes: {0}',
+                'msg.noNotes': 'No notes yet. Create your first one!',
+                'msg.noSearchResult': 'No notes match your search.',
+                'msg.enterTitleOrContent': 'Please enter a title or some content',
+                'msg.saveSuccess': 'Note saved',
+                'msg.saveError': 'Could not save the note: {0}',
+                'msg.enterGenInput': 'Please enter some text to turn into a note',
+                'msg.generating': 'Generating a structured note...',
+                'msg.generateButton': '🚀 Generate Notes',
+                'msg.generatingButton': '🔄 Generating...',
+                'msg.genDegraded': '⚠️ AI was not used; the note was built with local parsing instead (you can still edit and save it).<br>Reason: {0}',
+                'msg.genSuccess': 'Note generated. You can edit and save it now.',
+                'msg.genError': 'Could not generate the note: {0}',
+                'msg.unknownReason': 'unknown',
+                'msg.confirmDelete': 'Delete this note permanently?',
+                'msg.deleteSuccess': 'Note deleted',
+                'msg.deleteError': 'Could not delete the note: {0}',
+                'msg.tagStatsFailed': 'Could not load tag statistics',
+                'msg.tagNoTags': 'No tags yet. Create notes with tags and they will show up here.',
+                'msg.tagNoneFor': 'No notes found with the tag "{0}"',
+                'msg.searchingTag': 'Searching for the tag: {0}',
+                'msg.tagFilterError': 'Could not filter by tag: {0}',
+                'msg.filteredTitle': '📋 Filtered by "{0}" - pick a note',
+                'msg.filterHeader': '🏷️ Filtered by tag: "{0}" ({1} notes)',
+                'msg.clearFilter': '✕ Clear filter',
+                'msg.tagUniqueCount': '{0} unique tags, {1} total uses',
+                'msg.readonlyBanner': "👀 This is another visitor's public note, so you can only read it. Create your own note, or sign in to edit everything.",
+                'msg.readonlyBannerRO': '👀 This is a public note, so you can only read it. Sign in to edit everything.',
+                'msg.newNoteTitle': 'New note',
+                'msg.untitled': 'Untitled note',
+                'msg.untitledShort': 'Untitled',
+                'msg.noContent': 'No content',
+                'badge.public': 'Public',
+                'badge.private': 'Private',
+                'badge.mine': 'Mine',
+                'date.today': 'Today',
+                'date.yesterday': 'Yesterday',
+                'date.daysAgo': '{0} days ago'
+            }
+        };
+
         class NoteTaker {
             constructor() {
                 this.notes = [];
@@ -761,7 +990,125 @@
                 this.init();
             }
 
+            detectLang() {
+                // ?lang=en (or zh) wins for this page load, so an English link
+                // can simply be shared.
+                try {
+                    const fromUrl = new URLSearchParams(window.location.search).get('lang');
+                    if (fromUrl === 'zh' || fromUrl === 'en') return fromUrl;
+                } catch (e) {
+                    // URLSearchParams should always exist; ignore if it does not.
+                }
+                try {
+                    const saved = localStorage.getItem('notetaker.lang');
+                    if (saved === 'zh' || saved === 'en') return saved;
+                } catch (e) {
+                    // localStorage can be unavailable (private mode); fall through.
+                }
+                return 'zh';  // the site's default language is Chinese
+            }
+
+            /** Look up a localised message, substituting {0}, {1}, ... */
+            t(key, ...args) {
+                const table = MSG[this.lang] || MSG.zh;
+                let text = table[key];
+                if (text === undefined) text = MSG.zh[key];
+                if (text === undefined) return key;
+                args.forEach((value, index) => {
+                    text = text.split('{' + index + '}').join(String(value));
+                });
+                return text;
+            }
+
+            /** Turn a server error payload into a localised sentence. */
+            errText(data, fallbackKey) {
+                const code = data && data.error;
+                if (code === 'guest_limit_reached') {
+                    return this.t('err.guest_limit_reached', this.guestNoteLimit);
+                }
+                if (code && MSG.zh['err.' + code] !== undefined) {
+                    return this.t('err.' + code);
+                }
+                return (data && data.message) || this.t(fallbackKey || 'err.generic');
+            }
+
+            /** Push the current language into every tagged static element. */
+            applyLanguage() {
+                // Snapshot the original Chinese the first time we run, so
+                // switching back to Chinese is lossless.
+                if (!this.zhSnapshot) {
+                    this.zhSnapshot = { text: {}, placeholder: {}, title: {} };
+                    document.querySelectorAll('[data-i18n]').forEach(el => {
+                        this.zhSnapshot.text[el.getAttribute('data-i18n')] = el.innerHTML;
+                    });
+                    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                        this.zhSnapshot.placeholder[el.getAttribute('data-i18n-placeholder')] =
+                            el.getAttribute('placeholder');
+                    });
+                    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                        this.zhSnapshot.title[el.getAttribute('data-i18n-title')] =
+                            el.getAttribute('title') || '';
+                    });
+                }
+
+                const isEn = this.lang === 'en';
+                document.documentElement.lang = isEn ? 'en' : 'zh-CN';
+
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    el.innerHTML = (isEn && I18N_EN[key] !== undefined)
+                        ? I18N_EN[key] : this.zhSnapshot.text[key];
+                });
+                document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                    const key = el.getAttribute('data-i18n-placeholder');
+                    el.setAttribute('placeholder', (isEn && I18N_EN[key] !== undefined)
+                        ? I18N_EN[key] : this.zhSnapshot.placeholder[key]);
+                });
+                document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                    const key = el.getAttribute('data-i18n-title');
+                    el.setAttribute('title', (isEn && I18N_EN[key] !== undefined)
+                        ? I18N_EN[key] : this.zhSnapshot.title[key]);
+                });
+
+                const btn = document.getElementById('langSwitch');
+                if (btn) btn.textContent = this.t('lang.switchLabel');
+
+                // Pieces that JS renders rather than data-i18n.
+                this.updateAuthUI();
+                if (this.notes && this.notes.length) this.renderNotesList();
+                this.renderTagCloud();
+                this.refreshEditorLanguage();
+            }
+
+            /** Re-render the editor header / read-only banner in the new language. */
+            refreshEditorLanguage() {
+                const titleEl = document.getElementById('editorTitle');
+                if (this.currentNote && this.currentNote.id) {
+                    titleEl.textContent = this.currentNote.title || this.t('msg.untitled');
+                    this.setReadOnly(!this.currentNote.can_edit);
+                } else if (this.currentNote) {
+                    titleEl.textContent = this.t('msg.newNoteTitle');
+                    this.setReadOnly(false);
+                } else {
+                    titleEl.textContent = this.t('editor.selectPrompt');
+                }
+                this.hideMessage();
+            }
+
+            toggleLang() {
+                this.lang = this.lang === 'zh' ? 'en' : 'zh';
+                try {
+                    localStorage.setItem('notetaker.lang', this.lang);
+                } catch (e) {
+                    // ignore: language simply will not persist
+                }
+                this.applyLanguage();
+            }
+
             async init() {
+                this.lang = this.detectLang();
+                this.zhSnapshot = null;
+                this.applyLanguage();
                 this.bindEvents();
                 await this.loadAuthStatus();
                 await this.loadNotes();
@@ -772,7 +1119,6 @@
                 document.getElementById('newNoteBtn').addEventListener('click', () => this.createNewNote());
                 document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
-                document.getElementById('translateBtn').addEventListener('click', () => this.translateCurrentNote());
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
                 document.getElementById('generateNotesBtn').addEventListener('click', () => this.generateNotes());
                 
@@ -792,6 +1138,7 @@
 
                 // --- auth controls ---
                 document.getElementById('authBtn').addEventListener('click', () => this.onAuthButtonClick());
+                document.getElementById('langSwitch').addEventListener('click', () => this.toggleLang());
                 document.getElementById('loginCancelBtn').addEventListener('click', () => this.closeLogin());
                 document.getElementById('loginSubmitBtn').addEventListener('click', () => this.submitLogin());
                 document.getElementById('loginPassword').addEventListener('keydown', (e) => {
@@ -835,24 +1182,24 @@
                 const readOnlySite = !this.authenticated && this.guestNoteLimit === 0;
 
                 if (this.authenticated) {
-                    badge.textContent = '✅ 已登录（完整权限）';
+                    badge.textContent = this.t('role.loggedIn');
                     badge.classList.add('role-user');
                     hint.textContent = '';
-                    authBtn.textContent = '🚪 退出登录';
+                    authBtn.textContent = this.t('auth.logout');
                 } else if (readOnlySite) {
-                    badge.textContent = '📖 只读浏览';
+                    badge.textContent = this.t('role.readonly');
                     badge.classList.remove('role-user');
-                    hint.textContent = '笔记由管理员维护';
-                    authBtn.textContent = '🔑 管理员登录';
+                    hint.textContent = this.t('role.hintReadonly');
+                    authBtn.textContent = this.t('auth.adminLogin');
                 } else {
-                    badge.textContent = '👤 游客模式';
+                    badge.textContent = this.t('role.guest');
                     badge.classList.remove('role-user');
                     const used = this.myGuestNoteCount();
                     const left = Math.max(0, this.guestNoteLimit - used);
                     hint.textContent = left > 0
-                        ? `可创建 ${left} 条笔记，仅自己可见`
-                        : '创建额度已用完，需要获得管理员权限';
-                    authBtn.textContent = '🔑 输入密码';
+                        ? this.t('role.hintQuota', left)
+                        : this.t('role.hintQuotaUsed');
+                    authBtn.textContent = this.t('auth.login');
                 }
 
                 // The public toggle is owner-only.
@@ -871,13 +1218,6 @@
                 // AI features are owner-only and hidden entirely from guests.
                 const aiPanel = document.getElementById('aiPanel');
                 if (aiPanel) aiPanel.style.display = this.authenticated ? 'block' : 'none';
-
-                const translateBtn = document.getElementById('translateBtn');
-                if (translateBtn) translateBtn.style.display = this.authenticated ? '' : 'none';
-
-                // The language picker only exists to feed translate.
-                const langPicker = document.getElementById('translateLang');
-                if (langPicker) langPicker.style.display = this.authenticated ? '' : 'none';
             }
 
             myGuestNoteCount() {
@@ -913,12 +1253,12 @@
                 const btn = document.getElementById('loginSubmitBtn');
 
                 if (!password) {
-                    err.textContent = '请输入密码';
+                    err.textContent = this.t('login.enterPassword');
                     return;
                 }
 
                 btn.disabled = true;
-                btn.textContent = '登录中...';
+                btn.textContent = this.t('login.submitting');
                 err.textContent = '';
 
                 try {
@@ -930,7 +1270,7 @@
                     const data = await resp.json().catch(() => ({}));
 
                     if (!resp.ok) {
-                        err.textContent = data.message || '密码错误';
+                        err.textContent = this.errText(data, 'err.invalid_password');
                         return;
                     }
 
@@ -938,14 +1278,14 @@
                     this.role = 'user';
                     this.closeLogin();
                     this.updateAuthUI();
-                    this.showMessage('登录成功，已获得完整权限', 'success');
+                    this.showMessage(this.t('login.success'), 'success');
                     await this.loadNotes();
                     await this.loadTagCloud();
                 } catch (e) {
-                    err.textContent = '登录请求失败，请重试';
+                    err.textContent = this.t('login.failed');
                 } finally {
                     btn.disabled = false;
-                    btn.textContent = '登录';
+                    btn.textContent = this.t('login.submit');
                 }
             }
 
@@ -960,7 +1300,7 @@
                 this.currentNote = null;
                 this.hideEditor();
                 this.updateAuthUI();
-                this.showMessage('已退出登录，回到游客模式', 'success');
+                this.showMessage(this.t('logout.success'), 'success');
                 await this.loadNotes();
                 await this.loadTagCloud();
             }
@@ -971,22 +1311,22 @@
              */
             async handleAuthFailure(resp) {
                 if (resp.status === 401) {
-                    this.openLogin('该功能需要输入密码后使用');
+                    this.openLogin(this.t('err.auth_required'));
                     return true;
                 }
                 if (resp.status === 403) {
                     const data = await resp.json().catch(() => ({}));
                     if (data.error === 'guest_write_disabled') {
-                        this.showMessage(data.message || '本站为只读展示', 'error');
-                        this.openLogin('本站为只读展示，请输入管理员密码');
+                        this.showMessage(this.errText(data), 'error');
+                        this.openLogin(this.t('prompt.readonlyLogin'));
                         return true;
                     }
                     if (data.error === 'guest_limit_reached') {
-                        this.showMessage(data.message || '需要获得管理员权限', 'error');
-                        this.openLogin('游客创建额度已用完，请输入密码继续');
+                        this.showMessage(this.errText(data), 'error');
+                        this.openLogin(this.t('prompt.quotaLogin'));
                         return true;
                     }
-                    this.showMessage(data.message || '没有权限执行该操作', 'error');
+                    this.showMessage(this.errText(data, 'err.forbidden'), 'error');
                     return true;
                 }
                 return false;
@@ -994,7 +1334,7 @@
 
             async loadNotes() {
                 this.isLoading = true;
-                this.showMessage('Loading notes...', 'loading');
+                this.showMessage(this.t('msg.loadingNotes'), 'loading');
                 
                 try {
                     const response = await fetch('/api/notes');
@@ -1005,7 +1345,7 @@
                     this.updateAuthUI();
                     this.hideMessage();
                 } catch (error) {
-                    this.showMessage(`Error loading notes: ${error.message}`, 'error');
+                    this.showMessage(this.t('msg.loadNotesFailed', error.message), 'error');
                 } finally {
                     this.isLoading = false;
                 }
@@ -1014,10 +1354,10 @@
             /** Visibility / ownership badge shown next to a note title. */
             noteBadges(note) {
                 let html = note.is_public
-                    ? '<span class="note-badge public">公开</span>'
-                    : '<span class="note-badge private">私密</span>';
+                    ? `<span class="note-badge public">${this.t('badge.public')}</span>`
+                    : `<span class="note-badge private">${this.t('badge.private')}</span>`;
                 if (!this.authenticated && note.can_edit) {
-                    html += '<span class="note-badge mine">我的</span>';
+                    html += `<span class="note-badge mine">${this.t('badge.mine')}</span>`;
                 }
                 return html;
             }
@@ -1026,16 +1366,16 @@
                 const notesList = document.getElementById('notesList');
                 
                 if (this.notes.length === 0) {
-                    notesList.innerHTML = '<div class="empty-state"><p>No notes yet. Create your first note!</p></div>';
+                    notesList.innerHTML = `<div class="empty-state"><p>${this.t('msg.noNotes')}</p></div>`;
                     return;
                 }
 
                 notesList.innerHTML = this.notes.map(note => `
                     <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}" 
                          data-note-id="${note.id}" onclick="noteTaker.selectNote(${note.id})">
-                        <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}${this.noteBadges(note)}</div>
-                        <div class="note-preview">${this.escapeHtml(note.content || 'No content')}</div>
-                        <div class="note-date">${this.formatDate(note.updated_at)} ${note.event_date ? '· ' + note.event_date : ''} ${note.event_time ? note.event_time : ''}</div>
+                        <div class="note-title">${this.escapeHtml(note.title || this.t('msg.untitledShort'))}${this.noteBadges(note)}</div>
+                        <div class="note-preview">${this.escapeHtml(note.content || this.t('msg.noContent'))}</div>
+                        <div class="note-date">${this.formatDate(note.updated_at)} ${note.event_date ? '· ' + note.event_date : ''} ${this.formatTime(note.event_time)}</div>
                     </div>
                 `).join('');
             }
@@ -1053,19 +1393,13 @@
                 this.currentNote = note;
                 this.showEditor();
                 this.renderNotesList(); // Re-render to update active state
-                
-                // Clear translation area when switching notes
-                const translationArea = document.getElementById('translationArea');
-                translationArea.style.display = 'none';
-                translationArea.innerHTML = '';
-                
                 document.getElementById('noteTitle').value = note.title || '';
                 document.getElementById('noteContent').value = note.content || '';
                 document.getElementById('noteTags').value = (note.tags && note.tags.length) ? note.tags.join(',') : '';
                 document.getElementById('noteEventDate').value = note.event_date || '';
                 document.getElementById('noteEventTime').value = note.event_time || '';
                 document.getElementById('notePublic').checked = !!note.is_public;
-                document.getElementById('editorTitle').textContent = note.title || 'Untitled Note';
+                document.getElementById('editorTitle').textContent = note.title || this.t('msg.untitled');
                 this.setReadOnly(!note.can_edit);
             }
 
@@ -1079,7 +1413,7 @@
                 const banner = document.getElementById('readonlyBanner');
                 banner.style.display = readonly ? 'block' : 'none';
                 banner.textContent = readonly
-                    ? '👀 这是他人公开的笔记，你只能查看。你可以创建自己的笔记，或输入密码后编辑全部内容。'
+                    ? this.t(this.guestNoteLimit === 0 ? 'msg.readonlyBannerRO' : 'msg.readonlyBanner')
                     : '';
 
                 const saveBtn = document.getElementById('saveBtn');
@@ -1102,16 +1436,16 @@
                 // The server enforces this too; this is only for a clear message.
                 if (!this.authenticated) {
                     if (this.guestNoteLimit === 0) {
-                        this.showMessage('本站为只读展示，创建笔记需要获得管理员权限', 'error');
-                        this.openLogin('本站为只读展示，请输入管理员密码');
+                        this.showMessage(this.t('err.guest_write_disabled'), 'error');
+                        this.openLogin(this.t('prompt.readonlyLogin'));
                         return;
                     }
                     if (this.myGuestNoteCount() >= this.guestNoteLimit) {
                         this.showMessage(
-                            `游客模式最多只能创建 ${this.guestNoteLimit} 条笔记，需要获得管理员权限`,
+                            this.t('err.guest_limit_reached', this.guestNoteLimit),
                             'error'
                         );
-                        this.openLogin('游客创建额度已用完，请输入密码继续');
+                        this.openLogin(this.t('prompt.quotaLogin'));
                         return;
                     }
                 }
@@ -1130,19 +1464,13 @@
                 };
                 
                 this.showEditor();
-                
-                // Clear translation area when creating new note
-                const translationArea = document.getElementById('translationArea');
-                translationArea.style.display = 'none';
-                translationArea.innerHTML = '';
-                
                 document.getElementById('noteTitle').value = '';
                 document.getElementById('noteContent').value = '';
                 document.getElementById('noteTags').value = '';
                 document.getElementById('noteEventDate').value = '';
                 document.getElementById('noteEventTime').value = '';
                 document.getElementById('notePublic').checked = false;
-                document.getElementById('editorTitle').textContent = 'New Note';
+                document.getElementById('editorTitle').textContent = this.t('msg.newNoteTitle');
                 this.setReadOnly(false);
                 document.getElementById('noteTitle').focus();
                 
@@ -1170,7 +1498,7 @@
                 document.getElementById('emptyState').style.display = 'block';
                 document.getElementById('editorForm').style.display = 'none';
                 document.getElementById('editorActions').style.display = 'none';
-                document.getElementById('editorTitle').textContent = 'Select a note to edit';
+                document.getElementById('editorTitle').textContent = this.t('editor.selectPrompt');
 
                 const roBanner = document.getElementById('readonlyBanner');
                 if (roBanner) roBanner.style.display = 'none';
@@ -1182,12 +1510,6 @@
                 document.getElementById('noteEventDate').value = '';
                 document.getElementById('noteEventTime').value = '';
                 document.getElementById('notePublic').checked = false;
-                
-                // Clear translation area when hiding editor
-                const translationArea = document.getElementById('translationArea');
-                translationArea.style.display = 'none';
-                translationArea.innerHTML = '';
-                
                 // Clear current note reference
                 this.currentNote = null;
                 
@@ -1202,14 +1524,14 @@
 
                 if (!title && !content) {
                     if (!isAutoSave) {
-                        this.showMessage('Please enter a title or content', 'error');
+                        this.showMessage(this.t('msg.enterTitleOrContent'), 'error');
                     }
                     return;
                 }
 
                 try {
                     const noteData = {
-                        title: title || 'Untitled',
+                        title: title || this.t('msg.untitledShort'),
                         content: content,
                         tags: document.getElementById('noteTags').value ? document.getElementById('noteTags').value.split(',').map(t => t.trim()).filter(Boolean) : [],
                         event_date: document.getElementById('noteEventDate').value || null,
@@ -1264,43 +1586,10 @@
                     await this.loadTagCloud();
                     
                     if (!isAutoSave) {
-                        this.showMessage('Note saved successfully!', 'success');
+                        this.showMessage(this.t('msg.saveSuccess'), 'success');
                     }
                 } catch (error) {
-                    this.showMessage(`Error saving note: ${error.message}`, 'error');
-                }
-            }
-
-            async translateCurrentNote() {
-                const title = document.getElementById('noteTitle').value.trim();
-                const content = document.getElementById('noteContent').value.trim();
-                const lang = document.getElementById('translateLang').value || 'zh-CN';
-
-                const text = title ? `${title}\n\n${content}` : content;
-                if (!text) {
-                    this.showMessage('Please enter text to translate', 'error');
-                    return;
-                }
-
-                try {
-                    const resp = await fetch('/api/translate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text, lang })
-                    });
-
-                    if (!resp.ok) {
-                        if (await this.handleAuthFailure(resp)) return;
-                        const err = await resp.json().catch(() => ({}));
-                        throw new Error(err.error || 'Translate API failed');
-                    }
-
-                    const data = await resp.json();
-                    const area = document.getElementById('translationArea');
-                    area.style.display = 'block';
-                    area.innerHTML = `<div class="success"><strong>Translation (${lang}):</strong><div style="margin-top:8px;">${this.escapeHtml(data.translation || '')}</div></div>`;
-                } catch (error) {
-                    this.showMessage(`Translation error: ${error.message}`, 'error');
+                    this.showMessage(this.t('msg.saveError', error.message), 'error');
                 }
             }
 
@@ -1309,14 +1598,14 @@
                 const generateBtn = document.getElementById('generateNotesBtn');
                 
                 if (!naturalLanguageInput) {
-                    this.showMessage('Please enter some text to generate notes from', 'error');
+                    this.showMessage(this.t('msg.enterGenInput'), 'error');
                     return;
                 }
 
                 // Disable button and show loading state
                 generateBtn.disabled = true;
-                generateBtn.textContent = '🔄 Generating...';
-                this.showMessage('Generating structured notes...', 'loading');
+                generateBtn.textContent = this.t('msg.generatingButton');
+                this.showMessage(this.t('msg.generating'), 'loading');
 
                 try {
                     const response = await fetch('/api/generate-notes', {
@@ -1405,27 +1694,27 @@
                         // Show a warning but keep the generated draft, because
                         // it is still usable.
                         this.showMessage(
-                            '⚠️ 未使用 AI，已改用本地解析生成（你仍可编辑后保存）。<br>原因：' +
-                            this.escapeHtml(data.warning || '未知'),
+                            this.t('msg.genDegraded',
+                                   this.escapeHtml(data.warning || this.t('msg.unknownReason'))),
                             'warning'
                         );
                     } else {
-                        this.showMessage('Notes generated successfully! You can now edit and save them.', 'success');
+                        this.showMessage(this.t('msg.genSuccess'), 'success');
                     }
                     
                 } catch (error) {
-                    this.showMessage(`Error generating notes: ${error.message}`, 'error');
+                    this.showMessage(this.t('msg.genError', error.message), 'error');
                 } finally {
                     // Re-enable button
                     generateBtn.disabled = false;
-                    generateBtn.textContent = '🚀 Generate Notes';
+                    generateBtn.textContent = this.t('msg.generateButton');
                 }
             }
 
             async deleteNote() {
                 if (!this.currentNote || !this.currentNote.id) return;
 
-                if (!confirm('Are you sure you want to delete this note?')) return;
+                if (!confirm(this.t('msg.confirmDelete'))) return;
 
                 try {
                     const response = await fetch(`/api/notes/${this.currentNote.id}`, {
@@ -1445,9 +1734,9 @@
                     // Refresh tag cloud after deletion
                     await this.loadTagCloud();
                     
-                    this.showMessage('Note deleted successfully!', 'success');
+                    this.showMessage(this.t('msg.deleteSuccess'), 'success');
                 } catch (error) {
-                    this.showMessage(`Error deleting note: ${error.message}`, 'error');
+                    this.showMessage(this.t('msg.deleteError', error.message), 'error');
                 }
             }
 
@@ -1460,7 +1749,7 @@
                     this.renderTagCloud();
                 } catch (error) {
                     console.error('Error loading tag cloud:', error);
-                    this.renderEmptyTagCloud('Failed to load tags');
+                    this.renderEmptyTagCloud(this.t('msg.tagStatsFailed'));
                 }
             }
 
@@ -1470,7 +1759,7 @@
                 const tagStatsText = document.getElementById('tagStatsText');
 
                 if (!this.tagStats || !this.tagStats.tag_counts || this.tagStats.tag_counts.length === 0) {
-                    this.renderEmptyTagCloud('No tags found. Create some notes with tags to see them here!');
+                    this.renderEmptyTagCloud(this.t('msg.tagNoTags'));
                     return;
                 }
 
@@ -1492,7 +1781,7 @@
 
                 // Show statistics
                 tagStatsDiv.style.display = 'block';
-                tagStatsText.textContent = `${this.tagStats.unique_tags} unique tags, ${this.tagStats.total_tags} total uses`;
+                tagStatsText.textContent = this.t('msg.tagUniqueCount', this.tagStats.unique_tags, this.tagStats.total_tags);
             }
 
             renderEmptyTagCloud(message) {
@@ -1513,7 +1802,7 @@
 
             async filterByTag(tagName) {
                 try {
-                    this.showMessage(`Searching for notes with tag: ${tagName}`, 'loading');
+                    this.showMessage(this.t('msg.searchingTag', tagName), 'loading');
                     
                     let result;
                     let response;
@@ -1551,7 +1840,7 @@
                     }
                     
                     if (result.notes.length === 0) {
-                        this.showMessage(`No notes found with tag "${tagName}"`, 'error');
+                        this.showMessage(this.t('msg.tagNoneFor', tagName), 'error');
                         return;
                     }
 
@@ -1567,15 +1856,15 @@
                     
                     // Add filter indicator header
                     let filterHeader = `
-                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                        <div style="background: linear-gradient(135deg, #177a52 0%, #06281d 100%); 
                                    color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; 
                                    text-align: center; font-size: 13px; font-weight: 600;">
-                            🏷️ Filtered by tag: "${this.escapeHtml(tagName)}" (${result.count} notes)
+                            ${this.t('msg.filterHeader', this.escapeHtml(tagName), result.count)}
                             <button onclick="noteTaker.showAllNotes()" 
                                     style="background: rgba(255,255,255,0.2); border: none; color: white; 
                                            padding: 4px 8px; border-radius: 4px; margin-left: 10px; 
                                            font-size: 11px; cursor: pointer;">
-                                ✕ Clear Filter
+                                ${this.t('msg.clearFilter')}
                             </button>
                         </div>
                     `;
@@ -1584,18 +1873,18 @@
                         <div class="note-item" 
                              data-note-id="${note.id}" 
                              onclick="noteTaker.selectNote(${note.id})">
-                            <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}${this.noteBadges(note)}</div>
-                            <div class="note-preview">${this.escapeHtml(note.content || 'No content')}</div>
+                            <div class="note-title">${this.escapeHtml(note.title || this.t('msg.untitledShort'))}${this.noteBadges(note)}</div>
+                            <div class="note-preview">${this.escapeHtml(note.content || this.t('msg.noContent'))}</div>
                             <div class="note-date">${this.formatDate(note.updated_at)}</div>
                         </div>
                     `).join('');
 
                     // Update editor title to show filter status
-                    document.getElementById('editorTitle').textContent = `📋 Filtered by "${tagName}" - Select a note to edit`;
+                    document.getElementById('editorTitle').textContent = this.t('msg.filteredTitle', tagName);
 
-                    this.showMessage(`Found ${result.count} notes with tag "${tagName}"`, 'success');
+                    this.showMessage(this.t('msg.filterHeader', tagName, result.count), 'success');
                 } catch (error) {
-                    this.showMessage(`Error filtering by tag: ${error.message}`, 'error');
+                    this.showMessage(this.t('msg.tagFilterError', error.message), 'error');
                 }
             }
 
@@ -1609,7 +1898,7 @@
                 this.hideMessage();
                 
                 // Reset editor title
-                document.getElementById('editorTitle').textContent = 'Select a note to edit';
+                document.getElementById('editorTitle').textContent = this.t('editor.selectPrompt');
                 
                 // If no note is currently selected, hide editor
                 if (!this.currentNote) {
@@ -1629,15 +1918,15 @@
 
                 const notesList = document.getElementById('notesList');
                 if (filteredNotes.length === 0) {
-                    notesList.innerHTML = '<div class="empty-state"><p>No notes found matching your search.</p></div>';
+                    notesList.innerHTML = `<div class="empty-state"><p>${this.t('msg.noSearchResult')}</p></div>`;
                     return;
                 }
 
                 notesList.innerHTML = filteredNotes.map(note => `
                     <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}" 
                          data-note-id="${note.id}" onclick="noteTaker.selectNote(${note.id})">
-                        <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}${this.noteBadges(note)}</div>
-                        <div class="note-preview">${this.escapeHtml(note.content || 'No content')}</div>
+                        <div class="note-title">${this.escapeHtml(note.title || this.t('msg.untitledShort'))}${this.noteBadges(note)}</div>
+                        <div class="note-preview">${this.escapeHtml(note.content || this.t('msg.noContent'))}</div>
                         <div class="note-date">${this.formatDate(note.updated_at)}</div>
                     </div>
                 `).join('');
@@ -1662,6 +1951,13 @@
                 return div.innerHTML;
             }
 
+            /** The API returns event_time as HH:MM:SS; show HH:MM. */
+            formatTime(value) {
+                if (!value) return '';
+                const m = String(value).match(/^(\d{1,2}):(\d{2})/);
+                return m ? `${m[1].padStart(2, '0')}:${m[2]}` : value;
+            }
+
             formatDate(dateString) {
                 const date = new Date(dateString);
                 const now = new Date();
@@ -1669,13 +1965,13 @@
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
                 if (diffDays === 1) {
-                    return 'Today';
+                    return this.t('date.today');
                 } else if (diffDays === 2) {
-                    return 'Yesterday';
+                    return this.t('date.yesterday');
                 } else if (diffDays <= 7) {
-                    return `${diffDays - 1} days ago`;
+                    return this.t('date.daysAgo', diffDays - 1);
                 } else {
-                    return date.toLocaleDateString();
+                    return date.toLocaleDateString(this.lang === 'en' ? 'en-US' : 'zh-CN');
                 }
             }
         }

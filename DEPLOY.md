@@ -74,7 +74,11 @@ Docker 容器 notetaker（gunicorn + Flask，容器内 5001）
 
 ## AI 功能配置
 
-AI 生成与翻译走**任意 OpenAI 兼容的 chat-completions 接口**。三个变量（旧的 `GITHUB_*` 名字仍作为回退生效）：
+AI 生成走**任意 OpenAI 兼容的 chat-completions 接口**。三个变量（旧的 `GITHUB_*` 名字仍作为回退生效）：
+
+> 界面语言切换已取代原来的「翻译」按钮（`src/static/index.html` 里已无翻译 UI 与 `translateCurrentNote()`），
+> 但后端 `POST /api/translate`（需登录）与 `src/llm.py::translate()` 仍然保留可用，
+> Nginx 的 AI 限流规则也同时覆盖它。如果需要彻底删除，告诉我即可一并清理（涉及 Nginx 配置改动）。
 
 ```bash
 LLM_BASE_URL=https://api.deepseek.com/v1   # 或 https://models.github.ai/inference
