@@ -44,6 +44,34 @@ Docker 容器 notetaker（gunicorn + Flask，容器内 5001）
   **不要改用 `X-Forwarded-For` 判断配额** —— 该头由 `$proxy_add_x_forwarded_for` 追加，客户端可自行注入前缀绕过限制。
 - 游客删除自己的笔记后配额会释放，可以再建一条。因为游客笔记始终私密，这不构成内容滥用风险。
 
+### 只读展示模式（`GUEST_NOTE_LIMIT=0`）— 当前已启用
+
+设为 `0` 后网站整体降级为**只读展示**，用于备案期间把站点呈现为**非交互式**：
+
+- 后端：游客 `POST /api/notes` 返回 `403` + `code=guest_write_disabled`
+- 前端：游客视图里**直接隐藏**「New Note」按钮和整个 AI 面板（不是置灰，是不渲染），
+  只留「📖 只读浏览」标识与「🔑 管理员登录」入口
+- 游客仍可浏览公开笔记；管理员登录后功能完全不受影响
+
+备案通过后改回 `1` 即可恢复游客写入（改 `.env` 后 `docker compose up -d`，**无需重建镜像**）。
+
+> 判断依据：阿里云官方《公安联网备案信息填写指南》把「**站内搜索**、留言板、在线聊天、用户评论」列为交互式服务特征，
+> 「非交互式网站指仅展示静态信息、无用户互动功能的网站」。
+> 注意页面顶部的搜索框是**纯前端**过滤（`searchNotes()` 在浏览器内筛已加载的列表，不发服务端请求）。
+> 若审核方对「站内搜索」从严认定，可以再把搜索框也对游客隐藏。
+
+## 页脚备案号
+
+页脚在 `src/static/index.html` 的 `<footer class="site-footer">`：
+
+- **ICP 备案号已填入**（`新ICP备2026009541号-1`，链接 beian.miit.gov.cn），静态渲染，不依赖 JS
+- **公安联网备案号是隐藏占位**。办理完成后改三处：
+  1. 去掉 `<div class="footer-line" id="policeRecord" style="display:none;">` 里的 `style="display:none;"`
+  2. 把「新公网安备 XXXXXXXXXXXXXX 号」换成真实备案号
+  3. 链接里 `code=` 后补上公安备案查询编号，官方图标放到 `src/static/police-record.png`
+
+改完需 `docker compose up -d --build` 重建镜像（静态文件是打进镜像的）。
+
 ## AI 功能配置
 
 AI 生成与翻译走**任意 OpenAI 兼容的 chat-completions 接口**。三个变量（旧的 `GITHUB_*` 名字仍作为回退生效）：

@@ -550,6 +550,54 @@
         .locked {
             opacity: 0.65;
         }
+
+        /* ---- read-only guest notice ---- */
+        .guest-notice {
+            margin: 12px 0 4px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #eef2ff;
+            border-left: 4px solid #6366f1;
+            color: #4338ca;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* ---- site footer: legally required filing numbers ---- */
+        .site-footer {
+            margin-top: 28px;
+            padding: 16px 0 6px;
+            text-align: center;
+            font-size: 12px;
+            line-height: 2;
+            color: rgba(255, 255, 255, 0.92);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+        }
+
+        .site-footer a {
+            color: rgba(255, 255, 255, 0.92);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .site-footer a:hover {
+            color: #fff;
+            border-bottom-color: #fff;
+        }
+
+        .footer-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .police-icon {
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
@@ -568,6 +616,11 @@
             <div class="sidebar">
                 <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search notes...">
                 <button class="new-note-btn" id="newNoteBtn">✨ New Note</button>
+
+                <!-- Shown when guest writing is disabled (GUEST_NOTE_LIMIT=0) -->
+                <div id="guestNotice" class="guest-notice" style="display:none;">
+                    📖 本站为只读展示，笔记内容由管理员维护。
+                </div>
                 
                 <!-- Tag Cloud Section -->
                 <div style="margin: 15px 0; padding: 10px; background: #fff8dc; border-radius: 8px; border-left: 4px solid #ffa500;">
@@ -580,15 +633,12 @@
                     </div>
                 </div>
 
-                <!-- Generate Notes Section -->
-                <div style="margin: 15px 0; padding: 10px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #4f46e5;">
+                <!-- Generate Notes Section (owner only; hidden from guests) -->
+                <div id="aiPanel" style="margin: 15px 0; padding: 10px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #4f46e5;">
                     <h4 style="margin: 0 0 10px 0; color: #4f46e5; font-size: 14px;">🤖 Generate Notes</h4>
                     <textarea id="naturalLanguageInput" placeholder="Describe what happened today, your thoughts, or any information you want to turn into a note..."
                               style="width: 100%; min-height: 80px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
                     <button class="btn" id="generateNotesBtn" style="margin-top: 8px; width: 100%; font-size: 13px; padding: 8px;">🚀 Generate Notes</button>
-                    <div id="aiLockHint" style="display:none; margin-top:8px; font-size:12px; color:#b45309; line-height:1.5;">
-                        🔒 AI 功能需要输入密码后使用
-                    </div>
                 </div>
                 
                 <div class="notes-list" id="notesList">
@@ -659,6 +709,26 @@
                 </div>
             </div>
         </div>
+
+        <footer class="site-footer">
+            <div class="footer-line">
+                <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">新ICP备2026009541号-1</a>
+            </div>
+
+            <!--
+                公安联网备案号占位。办理完成后需要做三件事：
+                  1. 去掉下面 id="policeRecord" 那行的 style="display:none;"
+                  2. 把「新公网安备 XXXXXXXXXXXXXX 号」换成真实备案号
+                  3. 把上方链接里 code= 后面补上公安备案查询编号，
+                     并把官方提供的图标文件放到 src/static/police-record.png
+            -->
+            <div class="footer-line" id="policeRecord" style="display:none;">
+                <img src="/police-record.png" alt="公安联网备案" class="police-icon">
+                <a href="https://beian.mps.gov.cn/#/query/webSearch?code=" target="_blank" rel="noopener noreferrer">
+                    新公网安备 XXXXXXXXXXXXXX 号
+                </a>
+            </div>
+        </footer>
     </div>
 
     <div class="modal-overlay" id="loginModal">
@@ -760,11 +830,20 @@
                 const hint = document.getElementById('roleHint');
                 const authBtn = document.getElementById('authBtn');
 
+                // GUEST_NOTE_LIMIT=0 means the site is a read-only showcase
+                // (used while it is filed as a non-interactive service).
+                const readOnlySite = !this.authenticated && this.guestNoteLimit === 0;
+
                 if (this.authenticated) {
                     badge.textContent = '✅ 已登录（完整权限）';
                     badge.classList.add('role-user');
                     hint.textContent = '';
                     authBtn.textContent = '🚪 退出登录';
+                } else if (readOnlySite) {
+                    badge.textContent = '📖 只读浏览';
+                    badge.classList.remove('role-user');
+                    hint.textContent = '笔记由管理员维护';
+                    authBtn.textContent = '🔑 管理员登录';
                 } else {
                     badge.textContent = '👤 游客模式';
                     badge.classList.remove('role-user');
@@ -780,13 +859,25 @@
                 const group = document.getElementById('publicToggleGroup');
                 if (group) group.style.display = this.authenticated ? 'block' : 'none';
 
-                // AI features require the password.
-                const genBtn = document.getElementById('generateNotesBtn');
-                const aiHint = document.getElementById('aiLockHint');
-                if (genBtn) genBtn.classList.toggle('locked', !this.authenticated);
-                if (aiHint) aiHint.style.display = this.authenticated ? 'none' : 'block';
+                // Hide every writing affordance from guests, not just disable it:
+                // a reviewer looking at a read-only site should not see input
+                // forms for creating content.
+                const newBtn = document.getElementById('newNoteBtn');
+                if (newBtn) newBtn.style.display = (this.authenticated || !readOnlySite) ? '' : 'none';
+
+                const guestNotice = document.getElementById('guestNotice');
+                if (guestNotice) guestNotice.style.display = readOnlySite ? 'block' : 'none';
+
+                // AI features are owner-only and hidden entirely from guests.
+                const aiPanel = document.getElementById('aiPanel');
+                if (aiPanel) aiPanel.style.display = this.authenticated ? 'block' : 'none';
+
                 const translateBtn = document.getElementById('translateBtn');
-                if (translateBtn) translateBtn.classList.toggle('locked', !this.authenticated);
+                if (translateBtn) translateBtn.style.display = this.authenticated ? '' : 'none';
+
+                // The language picker only exists to feed translate.
+                const langPicker = document.getElementById('translateLang');
+                if (langPicker) langPicker.style.display = this.authenticated ? '' : 'none';
             }
 
             myGuestNoteCount() {
@@ -885,6 +976,11 @@
                 }
                 if (resp.status === 403) {
                     const data = await resp.json().catch(() => ({}));
+                    if (data.error === 'guest_write_disabled') {
+                        this.showMessage(data.message || '本站为只读展示', 'error');
+                        this.openLogin('本站为只读展示，请输入管理员密码');
+                        return true;
+                    }
                     if (data.error === 'guest_limit_reached') {
                         this.showMessage(data.message || '需要获得管理员权限', 'error');
                         this.openLogin('游客创建额度已用完，请输入密码继续');
@@ -1003,11 +1099,21 @@
             }
 
             createNewNote() {
-                // Guests may only ever hold one note; the server enforces this too.
-                if (!this.authenticated && this.myGuestNoteCount() >= this.guestNoteLimit) {
-                    this.showMessage('游客模式只能创建 1 条笔记，需要获得管理员权限', 'error');
-                    this.openLogin('游客创建额度已用完，请输入密码继续');
-                    return;
+                // The server enforces this too; this is only for a clear message.
+                if (!this.authenticated) {
+                    if (this.guestNoteLimit === 0) {
+                        this.showMessage('本站为只读展示，创建笔记需要获得管理员权限', 'error');
+                        this.openLogin('本站为只读展示，请输入管理员密码');
+                        return;
+                    }
+                    if (this.myGuestNoteCount() >= this.guestNoteLimit) {
+                        this.showMessage(
+                            `游客模式最多只能创建 ${this.guestNoteLimit} 条笔记，需要获得管理员权限`,
+                            'error'
+                        );
+                        this.openLogin('游客创建额度已用完，请输入密码继续');
+                        return;
+                    }
                 }
 
                 this.currentNote = {

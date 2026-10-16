@@ -43,9 +43,14 @@ def get_notes():
 def create_note():
     """Create a new note.
 
-    Guests are limited to `GUEST_NOTE_LIMIT` notes per IP and can never publish
-    one, so visitor content never becomes publicly readable UGC. The logged-in
-    owner has no limit and controls the public flag explicitly.
+    Guest behaviour is driven by GUEST_NOTE_LIMIT:
+      * 0  -> guest writing is switched off entirely (read-only showcase, used
+              while the site is registered as a non-interactive service)
+      * >0 -> a guest may create that many notes per IP
+
+    Either way a guest can never publish one, so visitor content never becomes
+    publicly readable UGC. The logged-in owner has no limit and controls the
+    public flag explicitly.
     """
     try:
         data = request.get_json(silent=True)
@@ -56,8 +61,18 @@ def create_note():
         authenticated = is_authenticated()
 
         if not authenticated:
-            existing = Note.query.filter_by(author_ip=ip).count()
             limit = guest_note_limit()
+            if limit == 0:
+                return (
+                    jsonify(
+                        {
+                            'error': 'guest_write_disabled',
+                            'message': '本站为只读展示，创建笔记需要获得管理员权限',
+                        }
+                    ),
+                    403,
+                )
+            existing = Note.query.filter_by(author_ip=ip).count()
             if existing >= limit:
                 return (
                     jsonify(
