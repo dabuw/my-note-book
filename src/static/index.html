@@ -380,6 +380,158 @@
             font-size: 12px;
             font-style: italic;
         }
+
+        /* ---- role / auth bar ---- */
+        .auth-bar {
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.22);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+        }
+
+        .role-badge.role-user {
+            background: #16a34a;
+            border-color: #16a34a;
+        }
+
+        .role-hint {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .btn-auth {
+            background: #fff;
+            color: #4f46e5;
+            font-weight: 600;
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+
+        /* ---- note visibility badge ---- */
+        .note-badge {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            vertical-align: middle;
+        }
+
+        .note-badge.public {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .note-badge.private {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .note-badge.mine {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+
+        /* ---- read-only banner ---- */
+        .readonly-banner {
+            margin: 10px 0;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #fff8dc;
+            border-left: 4px solid #ffa500;
+            font-size: 13px;
+            color: #92400e;
+        }
+
+        /* ---- login modal ---- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 14px;
+            padding: 24px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal h3 {
+            margin-bottom: 8px;
+            color: #4f46e5;
+            font-size: 18px;
+        }
+
+        .modal-desc {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+
+        .modal-error {
+            color: #dc2626;
+            font-size: 13px;
+            min-height: 18px;
+            margin: 8px 0 4px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .modal-actions .btn {
+            flex: 1;
+        }
+
+        .public-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #374151;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e1e5e9;
+        }
+
+        .public-toggle input {
+            width: 16px;
+            height: 16px;
+        }
+
+        .locked {
+            opacity: 0.65;
+        }
     </style>
 </head>
 <body>
@@ -387,6 +539,11 @@
         <div class="header">
             <h1>📝 NoteTaker</h1>
             <p>Organize your thoughts, capture your ideas</p>
+            <div class="auth-bar">
+                <span class="role-badge" id="roleBadge">👤 游客模式</span>
+                <span class="role-hint" id="roleHint"></span>
+                <button class="btn btn-auth" id="authBtn" type="button">🔑 输入密码</button>
+            </div>
         </div>
 
         <div class="main-content">
@@ -411,6 +568,9 @@
                     <textarea id="naturalLanguageInput" placeholder="Describe what happened today, your thoughts, or any information you want to turn into a note..."
                               style="width: 100%; min-height: 80px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
                     <button class="btn" id="generateNotesBtn" style="margin-top: 8px; width: 100%; font-size: 13px; padding: 8px;">🚀 Generate Notes</button>
+                    <div id="aiLockHint" style="display:none; margin-top:8px; font-size:12px; color:#b45309; line-height:1.5;">
+                        🔒 AI 功能需要输入密码后使用
+                    </div>
                 </div>
                 
                 <div class="notes-list" id="notesList">
@@ -439,6 +599,7 @@
 
                 <div id="messageArea"></div>
                 <div id="translationArea" style="margin:10px 0; display:none;"></div>
+                <div id="readonlyBanner" class="readonly-banner" style="display:none;"></div>
 
                 <div id="editorForm" style="display: none;">
                     <div class="form-group">
@@ -465,12 +626,35 @@
                             <input type="time" class="form-input" id="noteEventTime">
                         </div>
                     </div>
+
+                    <div class="form-group" id="publicToggleGroup" style="display:none;">
+                        <label class="public-toggle" for="notePublic">
+                            <input type="checkbox" id="notePublic">
+                            <span>🌐 公开这条笔记（其他访客可见）</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="empty-state" id="emptyState">
                     <h3>Welcome to NoteTaker!</h3>
                     <p>Select an existing note or create a new one to get started.</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal">
+            <h3>🔑 输入密码</h3>
+            <p class="modal-desc">
+                登录后可查看全部笔记、无限创建与修改，并使用 AI 生成 / 翻译功能。
+            </p>
+            <input type="password" class="form-input" id="loginPassword"
+                   placeholder="请输入密码" autocomplete="current-password">
+            <div class="modal-error" id="loginError"></div>
+            <div class="modal-actions">
+                <button class="btn" id="loginCancelBtn" type="button">取消</button>
+                <button class="btn btn-save" id="loginSubmitBtn" type="button">登录</button>
             </div>
         </div>
     </div>
@@ -483,11 +667,15 @@
                 this.isLoading = false;
                 this.tagStats = null;
                 this.activeTag = null;  // 跟踪当前活动的标签
+                this.role = 'guest';
+                this.authenticated = false;
+                this.guestNoteLimit = 1;
                 this.init();
             }
 
             async init() {
                 this.bindEvents();
+                await this.loadAuthStatus();
                 await this.loadNotes();
                 await this.loadTagCloud();
             }
@@ -513,6 +701,181 @@
                 
                 document.getElementById('noteTitle').addEventListener('input', autoSave);
                 document.getElementById('noteContent').addEventListener('input', autoSave);
+
+                // --- auth controls ---
+                document.getElementById('authBtn').addEventListener('click', () => this.onAuthButtonClick());
+                document.getElementById('loginCancelBtn').addEventListener('click', () => this.closeLogin());
+                document.getElementById('loginSubmitBtn').addEventListener('click', () => this.submitLogin());
+                document.getElementById('loginPassword').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.submitLogin();
+                    }
+                });
+                document.getElementById('loginModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'loginModal') this.closeLogin();
+                });
+            }
+
+            // ================= auth / role =================
+
+            async loadAuthStatus() {
+                try {
+                    const resp = await fetch('/api/auth/status');
+                    if (!resp.ok) throw new Error('status failed');
+                    const data = await resp.json();
+                    this.role = data.role || 'guest';
+                    this.authenticated = !!data.authenticated;
+                    if (data.guest_note_limit !== undefined) {
+                        this.guestNoteLimit = data.guest_note_limit;
+                    }
+                } catch (e) {
+                    // Fail closed: treat as guest if we cannot confirm the session.
+                    this.role = 'guest';
+                    this.authenticated = false;
+                }
+                this.updateAuthUI();
+            }
+
+            updateAuthUI() {
+                const badge = document.getElementById('roleBadge');
+                const hint = document.getElementById('roleHint');
+                const authBtn = document.getElementById('authBtn');
+
+                if (this.authenticated) {
+                    badge.textContent = '✅ 已登录（完整权限）';
+                    badge.classList.add('role-user');
+                    hint.textContent = '';
+                    authBtn.textContent = '🚪 退出登录';
+                } else {
+                    badge.textContent = '👤 游客模式';
+                    badge.classList.remove('role-user');
+                    const used = this.myGuestNoteCount();
+                    const left = Math.max(0, this.guestNoteLimit - used);
+                    hint.textContent = left > 0
+                        ? `可创建 ${left} 条笔记，仅自己可见`
+                        : '创建额度已用完，需要获得管理员权限';
+                    authBtn.textContent = '🔑 输入密码';
+                }
+
+                // The public toggle is owner-only.
+                const group = document.getElementById('publicToggleGroup');
+                if (group) group.style.display = this.authenticated ? 'block' : 'none';
+
+                // AI features require the password.
+                const genBtn = document.getElementById('generateNotesBtn');
+                const aiHint = document.getElementById('aiLockHint');
+                if (genBtn) genBtn.classList.toggle('locked', !this.authenticated);
+                if (aiHint) aiHint.style.display = this.authenticated ? 'none' : 'block';
+                const translateBtn = document.getElementById('translateBtn');
+                if (translateBtn) translateBtn.classList.toggle('locked', !this.authenticated);
+            }
+
+            myGuestNoteCount() {
+                // Notes the current guest created are the ones they are allowed to edit.
+                return this.notes.filter(n => !n.is_public && n.can_edit).length;
+            }
+
+            onAuthButtonClick() {
+                if (this.authenticated) {
+                    this.logout();
+                } else {
+                    this.openLogin();
+                }
+            }
+
+            openLogin(message) {
+                const modal = document.getElementById('loginModal');
+                const err = document.getElementById('loginError');
+                err.textContent = message || '';
+                document.getElementById('loginPassword').value = '';
+                modal.classList.add('open');
+                setTimeout(() => document.getElementById('loginPassword').focus(), 50);
+            }
+
+            closeLogin() {
+                document.getElementById('loginModal').classList.remove('open');
+                document.getElementById('loginError').textContent = '';
+            }
+
+            async submitLogin() {
+                const password = document.getElementById('loginPassword').value;
+                const err = document.getElementById('loginError');
+                const btn = document.getElementById('loginSubmitBtn');
+
+                if (!password) {
+                    err.textContent = '请输入密码';
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = '登录中...';
+                err.textContent = '';
+
+                try {
+                    const resp = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password })
+                    });
+                    const data = await resp.json().catch(() => ({}));
+
+                    if (!resp.ok) {
+                        err.textContent = data.message || '密码错误';
+                        return;
+                    }
+
+                    this.authenticated = true;
+                    this.role = 'user';
+                    this.closeLogin();
+                    this.updateAuthUI();
+                    this.showMessage('登录成功，已获得完整权限', 'success');
+                    await this.loadNotes();
+                    await this.loadTagCloud();
+                } catch (e) {
+                    err.textContent = '登录请求失败，请重试';
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = '登录';
+                }
+            }
+
+            async logout() {
+                try {
+                    await fetch('/api/auth/logout', { method: 'POST' });
+                } catch (e) {
+                    // ignore, we still drop local state below
+                }
+                this.authenticated = false;
+                this.role = 'guest';
+                this.currentNote = null;
+                this.hideEditor();
+                this.updateAuthUI();
+                this.showMessage('已退出登录，回到游客模式', 'success');
+                await this.loadNotes();
+                await this.loadTagCloud();
+            }
+
+            /**
+             * Turn an auth/permission failure into a clear prompt.
+             * Returns true when the response was an auth problem already handled.
+             */
+            async handleAuthFailure(resp) {
+                if (resp.status === 401) {
+                    this.openLogin('该功能需要输入密码后使用');
+                    return true;
+                }
+                if (resp.status === 403) {
+                    const data = await resp.json().catch(() => ({}));
+                    if (data.error === 'guest_limit_reached') {
+                        this.showMessage(data.message || '需要获得管理员权限', 'error');
+                        this.openLogin('游客创建额度已用完，请输入密码继续');
+                        return true;
+                    }
+                    this.showMessage(data.message || '没有权限执行该操作', 'error');
+                    return true;
+                }
+                return false;
             }
 
             async loadNotes() {
@@ -525,12 +888,24 @@
                     
                     this.notes = await response.json();
                     this.renderNotesList();
+                    this.updateAuthUI();
                     this.hideMessage();
                 } catch (error) {
                     this.showMessage(`Error loading notes: ${error.message}`, 'error');
                 } finally {
                     this.isLoading = false;
                 }
+            }
+
+            /** Visibility / ownership badge shown next to a note title. */
+            noteBadges(note) {
+                let html = note.is_public
+                    ? '<span class="note-badge public">公开</span>'
+                    : '<span class="note-badge private">私密</span>';
+                if (!this.authenticated && note.can_edit) {
+                    html += '<span class="note-badge mine">我的</span>';
+                }
+                return html;
             }
 
             renderNotesList() {
@@ -544,7 +919,7 @@
                 notesList.innerHTML = this.notes.map(note => `
                     <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}" 
                          data-note-id="${note.id}" onclick="noteTaker.selectNote(${note.id})">
-                        <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}</div>
+                        <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}${this.noteBadges(note)}</div>
                         <div class="note-preview">${this.escapeHtml(note.content || 'No content')}</div>
                         <div class="note-date">${this.formatDate(note.updated_at)} ${note.event_date ? '· ' + note.event_date : ''} ${note.event_time ? note.event_time : ''}</div>
                     </div>
@@ -575,10 +950,48 @@
                 document.getElementById('noteTags').value = (note.tags && note.tags.length) ? note.tags.join(',') : '';
                 document.getElementById('noteEventDate').value = note.event_date || '';
                 document.getElementById('noteEventTime').value = note.event_time || '';
+                document.getElementById('notePublic').checked = !!note.is_public;
                 document.getElementById('editorTitle').textContent = note.title || 'Untitled Note';
+                this.setReadOnly(!note.can_edit);
+            }
+
+            /** Lock the editor for notes the current viewer may only read. */
+            setReadOnly(readonly) {
+                ['noteTitle', 'noteContent', 'noteTags', 'noteEventDate', 'noteEventTime'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.readOnly = readonly;
+                });
+
+                const banner = document.getElementById('readonlyBanner');
+                banner.style.display = readonly ? 'block' : 'none';
+                banner.textContent = readonly
+                    ? '👀 这是他人公开的笔记，你只能查看。你可以创建自己的笔记，或输入密码后编辑全部内容。'
+                    : '';
+
+                const saveBtn = document.getElementById('saveBtn');
+                const deleteBtn = document.getElementById('deleteBtn');
+                if (readonly) {
+                    if (saveBtn) saveBtn.style.display = 'none';
+                    if (deleteBtn) deleteBtn.style.display = 'none';
+                } else {
+                    if (saveBtn) saveBtn.style.display = 'inline-block';
+                    if (deleteBtn) {
+                        deleteBtn.style.display = (this.currentNote && this.currentNote.id) ? 'inline-block' : 'none';
+                    }
+                }
+
+                const group = document.getElementById('publicToggleGroup');
+                if (group) group.style.display = (this.authenticated && !readonly) ? 'block' : 'none';
             }
 
             createNewNote() {
+                // Guests may only ever hold one note; the server enforces this too.
+                if (!this.authenticated && this.myGuestNoteCount() >= this.guestNoteLimit) {
+                    this.showMessage('游客模式只能创建 1 条笔记，需要获得管理员权限', 'error');
+                    this.openLogin('游客创建额度已用完，请输入密码继续');
+                    return;
+                }
+
                 this.currentNote = {
                     id: null,
                     title: '',
@@ -586,6 +999,8 @@
                     tags: [],
                     event_date: null,
                     event_time: null,
+                    is_public: false,
+                    can_edit: true,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                 };
@@ -602,7 +1017,9 @@
                 document.getElementById('noteTags').value = '';
                 document.getElementById('noteEventDate').value = '';
                 document.getElementById('noteEventTime').value = '';
+                document.getElementById('notePublic').checked = false;
                 document.getElementById('editorTitle').textContent = 'New Note';
+                this.setReadOnly(false);
                 document.getElementById('noteTitle').focus();
                 
                 // Remove active state from all notes
@@ -630,6 +1047,9 @@
                 document.getElementById('editorForm').style.display = 'none';
                 document.getElementById('editorActions').style.display = 'none';
                 document.getElementById('editorTitle').textContent = 'Select a note to edit';
+
+                const roBanner = document.getElementById('readonlyBanner');
+                if (roBanner) roBanner.style.display = 'none';
                 
                 // Clear all form fields to avoid confusion
                 document.getElementById('noteTitle').value = '';
@@ -637,6 +1057,7 @@
                 document.getElementById('noteTags').value = '';
                 document.getElementById('noteEventDate').value = '';
                 document.getElementById('noteEventTime').value = '';
+                document.getElementById('notePublic').checked = false;
                 
                 // Clear translation area when hiding editor
                 const translationArea = document.getElementById('translationArea');
@@ -671,6 +1092,12 @@
                         event_time: document.getElementById('noteEventTime').value || null
                     };
 
+                    // Only the owner may change visibility; the server ignores
+                    // this field for guests.
+                    if (this.authenticated) {
+                        noteData.is_public = document.getElementById('notePublic').checked;
+                    }
+
                     let response;
                     if (this.currentNote.id) {
                         // Update existing note
@@ -688,7 +1115,12 @@
                         });
                     }
 
-                    if (!response.ok) throw new Error('Failed to save note');
+                    if (!response.ok) {
+                        if (isAutoSave) return;
+                        if (await this.handleAuthFailure(response)) return;
+                        const errData = await response.json().catch(() => ({}));
+                        throw new Error(errData.error || 'Failed to save note');
+                    }
 
                     const savedNote = await response.json();
                     this.currentNote = savedNote;
@@ -734,6 +1166,7 @@
                     });
 
                     if (!resp.ok) {
+                        if (await this.handleAuthFailure(resp)) return;
                         const err = await resp.json().catch(() => ({}));
                         throw new Error(err.error || 'Translate API failed');
                     }
@@ -773,6 +1206,7 @@
                     });
 
                     if (!response.ok) {
+                        if (await this.handleAuthFailure(response)) return;
                         const errorData = await response.json().catch(() => ({}));
                         throw new Error(errorData.error || `Server error: ${response.status}`);
                     }
@@ -863,7 +1297,10 @@
                         method: 'DELETE'
                     });
 
-                    if (!response.ok) throw new Error('Failed to delete note');
+                    if (!response.ok) {
+                        if (await this.handleAuthFailure(response)) return;
+                        throw new Error('Failed to delete note');
+                    }
 
                     // Remove from notes array
                     this.notes = this.notes.filter(n => n.id !== this.currentNote.id);
@@ -1012,7 +1449,7 @@
                         <div class="note-item" 
                              data-note-id="${note.id}" 
                              onclick="noteTaker.selectNote(${note.id})">
-                            <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}</div>
+                            <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}${this.noteBadges(note)}</div>
                             <div class="note-preview">${this.escapeHtml(note.content || 'No content')}</div>
                             <div class="note-date">${this.formatDate(note.updated_at)}</div>
                         </div>
@@ -1064,7 +1501,7 @@
                 notesList.innerHTML = filteredNotes.map(note => `
                     <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}" 
                          data-note-id="${note.id}" onclick="noteTaker.selectNote(${note.id})">
-                        <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}</div>
+                        <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}${this.noteBadges(note)}</div>
                         <div class="note-preview">${this.escapeHtml(note.content || 'No content')}</div>
                         <div class="note-date">${this.formatDate(note.updated_at)}</div>
                     </div>

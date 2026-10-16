@@ -12,6 +12,11 @@ class Note(db.Model):
     tags = db.Column(db.Text, nullable=True)
     event_date = db.Column(db.Date, nullable=True)
     event_time = db.Column(db.Time, nullable=True)
+    # IP that created the note when it came from a guest; NULL for the owner.
+    author_ip = db.Column(db.String(45), nullable=True, index=True)
+    # Only notes flagged public are readable by other visitors.
+    # Guests can never set this to True.
+    is_public = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -46,7 +51,18 @@ class Note(db.Model):
         except Exception:
             self.tags = None
 
-    def to_dict(self):
+    def to_dict(self, viewer_ip=None, role='guest'):
+        """Serialise the note for a viewer.
+
+        `can_edit` tells the frontend whether the current viewer is allowed to
+        modify or delete this note. Guests may only edit the note they created
+        themselves; the logged-in owner may edit everything.
+        """
+        if role == 'user':
+            can_edit = True
+        else:
+            can_edit = self.author_ip is not None and self.author_ip == viewer_ip
+
         return {
             'id': self.id,
             'title': self.title,
@@ -54,6 +70,8 @@ class Note(db.Model):
             'tags': self.get_tags(),
             'event_date': self.event_date.isoformat() if self.event_date else None,
             'event_time': self.event_time.isoformat() if self.event_time else None,
+            'is_public': bool(self.is_public),
+            'can_edit': can_edit,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

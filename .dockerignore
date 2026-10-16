@@ -1,0 +1,37 @@
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# Python
+__pycache__
+*.py[cod]
+*.egg-info
+.venv
+venv
+ENV
+
+# Secrets must never enter an image layer: ENV values baked into a layer can be
+# read back with `docker history`.
+.env
+.env.*
+*.pem
+*.key
+
+# Local data
+database
+data
+*.db
+*.db-wal
+*.db-shm
+*.sqlite3
+*.log
+
+# Docs / screenshots / dev scratch
+*.md
+screenshots
+image*.png
+create_test_data.py
+.DS_Store
+Thumbs.db

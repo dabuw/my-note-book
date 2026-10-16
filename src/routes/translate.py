@@ -1,10 +1,12 @@
 from flask import Blueprint, jsonify, request
+from src.auth import login_required
 from src.llm import translate
 
 translate_bp = Blueprint('translate', __name__)
 
 
 @translate_bp.route('/translate', methods=['POST'])
+@login_required
 def translate_text():
     data = request.json or {}
     text = data.get('text')

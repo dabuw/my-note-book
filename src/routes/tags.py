@@ -1,6 +1,7 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from collections import Counter
-from src.models.note import Note
+
+from src.auth import serialize, visible_notes_query
 import json
 
 tags_bp = Blueprint('tags', __name__)
@@ -9,8 +10,8 @@ tags_bp = Blueprint('tags', __name__)
 def get_tags_statistics():
     """获取所有笔记中标签的使用统计信息"""
     try:
-        # 获取所有笔记
-        notes = Note.query.all()
+        # 只统计当前访问者有权看到的笔记
+        notes = visible_notes_query().all()
         
         # 收集所有标签
         all_tags = []
@@ -78,10 +79,7 @@ def search_notes_by_tag(tag_name):
         if '%' in decoded_tag:
             decoded_tag = urllib.parse.unquote(decoded_tag)
         
-        print(f"[DEBUG] Original tag_name: {tag_name}")
-        print(f"[DEBUG] Decoded tag: {decoded_tag}")
-        
-        notes = Note.query.all()
+        notes = visible_notes_query().all()
         matching_notes = []
         
         for note in notes:
@@ -92,7 +90,7 @@ def search_notes_by_tag(tag_name):
                     if (tag.lower() == decoded_tag.lower() or 
                         tag == decoded_tag or
                         tag.strip().lower() == decoded_tag.strip().lower()):
-                        matching_notes.append(note.to_dict())
+                        matching_notes.append(serialize(note))
                         break
         
         return jsonify({
@@ -103,7 +101,6 @@ def search_notes_by_tag(tag_name):
         })
         
     except Exception as e:
-        print(f"[ERROR] Tag search failed: {str(e)}")
         return jsonify({
             'error': f'Failed to search notes by tag: {str(e)}',
             'tag_param': tag_name,
@@ -117,16 +114,12 @@ def search_notes_by_tag(tag_name):
 def search_notes_by_tag_post():
     """根据标签搜索相关笔记 (POST 方法，避免 URL 编码问题)"""
     try:
-        from flask import request
-        
-        data = request.get_json()
+        data = request.get_json(silent=True)
         if not data or 'tag' not in data:
             return jsonify({'error': 'Missing tag parameter in request body'}), 400
         
         tag_name = data['tag']
-        print(f"[DEBUG] POST search for tag: {tag_name}")
-        
-        notes = Note.query.all()
+        notes = visible_notes_query().all()
         matching_notes = []
         
         for note in notes:
@@ -137,7 +130,7 @@ def search_notes_by_tag_post():
                     if (tag.lower() == tag_name.lower() or 
                         tag == tag_name or
                         tag.strip().lower() == tag_name.strip().lower()):
-                        matching_notes.append(note.to_dict())
+                        matching_notes.append(serialize(note))
                         break
         
         return jsonify({
@@ -147,7 +140,6 @@ def search_notes_by_tag_post():
         })
         
     except Exception as e:
-        print(f"[ERROR] POST tag search failed: {str(e)}")
         return jsonify({
             'error': f'Failed to search notes by tag: {str(e)}',
             'debug_info': {

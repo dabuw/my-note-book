@@ -1,0 +1,30 @@
+services:
+  notetaker:
+    build: .
+    image: notetaker:latest
+    container_name: notetaker
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      # Loopback only. The host Nginx is the single public entry point on
+      # 80/443 and reverse-proxies to this address. Never bind 0.0.0.0 here.
+      - "127.0.0.1:18100:5001"
+    volumes:
+      # SQLite lives on the host so the data survives image rebuilds.
+      - ./data:/app/database
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:5001/api/health', timeout=4).status == 200 else 1)"
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
