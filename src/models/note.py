@@ -1,7 +1,22 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timezone
 import json
 from src.models.user import db
+
+
+def iso_utc(value):
+    """Serialise a naive-UTC datetime as an explicit UTC ISO 8601 string.
+
+    The columns store `datetime.utcnow()`, i.e. UTC without a timezone marker.
+    A browser parsing "2026-10-16T10:16:21" treats it as *local* time, which
+    skews every relative date by the client's UTC offset. Appending the "Z"
+    makes the client convert it properly instead.
+    """
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
 
 
 class Note(db.Model):
@@ -72,7 +87,7 @@ class Note(db.Model):
             'event_time': self.event_time.isoformat() if self.event_time else None,
             'is_public': bool(self.is_public),
             'can_edit': can_edit,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at)
         }
 

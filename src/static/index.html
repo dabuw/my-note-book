@@ -105,12 +105,14 @@
 
         .new-note-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(23, 122, 82, 0.35);
         }
 
         .notes-list {
             max-height: 500px;
             overflow-y: auto;
+            overflow-x: hidden;      /* no stray horizontal scrollbar */
+            scrollbar-gutter: stable;
         }
 
         .note-item {
@@ -119,18 +121,22 @@
             border-radius: 10px;
             margin-bottom: 10px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            /* Deliberately no transform here: translating the item sideways
+               overflowed .notes-list and produced a stray horizontal scrollbar
+               while clipping the item's own right border. */
+            transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
             background: #f8f9fa;
         }
 
         .note-item:hover {
-            border-color: #177a52;
-            transform: translateX(5px);
+            background: #eef7f1;
+            border-color: #1f9d6b;
+            box-shadow: 0 4px 14px rgba(6, 40, 29, 0.16);
         }
 
         .note-item.active {
             border-color: #177a52;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(23, 122, 82, 0.14) 0%, rgba(13, 74, 52, 0.10) 100%);
         }
 
         .note-title {
@@ -371,7 +377,7 @@
 
         .tag-item:hover {
             transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 12px rgba(23, 122, 82, 0.28);
             background: linear-gradient(135deg, #12603f 0%, #08301f 100%);
         }
 
@@ -1960,19 +1966,18 @@
 
             formatDate(dateString) {
                 const date = new Date(dateString);
-                const now = new Date();
-                const diffTime = Math.abs(now - date);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (isNaN(date.getTime())) return '';
 
-                if (diffDays === 1) {
-                    return this.t('date.today');
-                } else if (diffDays === 2) {
-                    return this.t('date.yesterday');
-                } else if (diffDays <= 7) {
-                    return this.t('date.daysAgo', diffDays - 1);
-                } else {
-                    return date.toLocaleDateString(this.lang === 'en' ? 'en-US' : 'zh-CN');
-                }
+                // Compare calendar days rather than elapsed hours: the old
+                // Math.ceil(elapsedHours / 24) was off by one, so a note from
+                // three days ago was labelled "2 days ago".
+                const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                const dayDiff = Math.round((startOfDay(new Date()) - startOfDay(date)) / 86400000);
+
+                if (dayDiff <= 0) return this.t('date.today');
+                if (dayDiff === 1) return this.t('date.yesterday');
+                if (dayDiff <= 7) return this.t('date.daysAgo', dayDiff);
+                return date.toLocaleDateString(this.lang === 'en' ? 'en-US' : 'zh-CN');
             }
         }
 
