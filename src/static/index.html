@@ -14,8 +14,10 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            /* Deep forest -> fresh green, fixed so it does not band on scroll. */
-            background: linear-gradient(160deg, #06281d 0%, #0d4a34 38%, #177a52 72%, #1f9d6b 100%);
+            /* Milk-yellow cream, fixed so it does not band on scroll.
+               Kept warm all the way down instead of fading to pure white,
+               so the white cards still read as cards at the bottom. */
+            background: linear-gradient(168deg, #f6e7bd 0%, #faefd2 30%, #fcf4e0 66%, #fdf8ea 100%);
             background-attachment: fixed;
             min-height: 100vh;
             color: #333;
@@ -34,13 +36,16 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            color: white;
+            /* Was white, which is invisible on the cream background. */
+            color: #3f361f;
         }
 
         .header h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            /* A dark drop shadow looks grubby on a light background; a faint
+               white emboss keeps the title crisp instead. */
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
         }
 
         .header p {
@@ -59,7 +64,8 @@
             background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            /* A neutral black shadow reads as grubby over cream; warm it. */
+            box-shadow: 0 8px 28px rgba(120, 100, 50, 0.14);
             backdrop-filter: blur(10px);
             height: fit-content;
         }
@@ -68,7 +74,7 @@
             background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 28px rgba(120, 100, 50, 0.14);
             backdrop-filter: blur(10px);
             display: flex;
             flex-direction: column;
@@ -424,19 +430,22 @@
             border-radius: 999px;
             font-size: 13px;
             font-weight: 600;
-            background: rgba(255, 255, 255, 0.22);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.45);
+            /* Guest state: a light pill. The signed-in state below is a
+               solid green pill, so the two stay visually distinct. */
+            background: rgba(255, 255, 255, 0.82);
+            color: #0f7a54;
+            border: 1px solid rgba(15, 122, 84, 0.28);
         }
 
         .role-badge.role-user {
-            background: #16a34a;
-            border-color: #16a34a;
+            background: #0f7a54;
+            color: #fff;
+            border-color: #0f7a54;
         }
 
         .role-hint {
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.9);
+            color: #6b5d38;
         }
 
         .btn-auth {
@@ -445,6 +454,8 @@
             font-weight: 600;
             padding: 6px 14px;
             font-size: 13px;
+            border: 1px solid rgba(15, 122, 84, 0.25);
+            box-shadow: 0 2px 6px rgba(120, 100, 50, 0.12);
         }
 
         /* ---- note visibility badge ---- */
@@ -579,19 +590,18 @@
             text-align: center;
             font-size: 12px;
             line-height: 2;
-            color: rgba(255, 255, 255, 0.92);
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+            color: #6b5d38;
         }
 
         .site-footer a {
-            color: rgba(255, 255, 255, 0.92);
+            color: #6b5d38;
             text-decoration: none;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+            border-bottom: 1px solid rgba(107, 93, 56, 0.5);
         }
 
         .site-footer a:hover {
-            color: #fff;
-            border-bottom-color: #fff;
+            color: #5c4f2e;
+            border-bottom-color: #5c4f2e;
         }
 
         .footer-line {
@@ -621,18 +631,18 @@
             font-size: 13px;
             font-weight: 600;
             font-family: inherit;
-            color: #06281d;
-            background: rgba(255, 255, 255, 0.94);
-            border: 1px solid rgba(255, 255, 255, 0.7);
+            color: #0f7a54;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(15, 122, 84, 0.22);
             border-radius: 999px;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+            box-shadow: 0 3px 10px rgba(120, 100, 50, 0.16);
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
 
         .lang-switch:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+            box-shadow: 0 6px 16px rgba(120, 100, 50, 0.22);
         }
 
         .lang-switch:active {
