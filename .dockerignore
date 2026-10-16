@@ -28,10 +28,8 @@ data
 *.sqlite3
 *.log
 
-# Docs / screenshots / dev scratch
+# Docs and tests are not needed to run the service.
 *.md
-screenshots
-image*.png
-create_test_data.py
+tests
 .DS_Store
 Thumbs.db
