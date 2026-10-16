@@ -98,20 +98,23 @@
         .new-note-btn {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #177a52 0%, #06281d 100%);
-            color: white;
+            /* Flat brand green. The old gradient ran down to #06281d, which
+               read as almost black and was the heaviest thing on the page. */
+            background: #0f7a54;
+            color: #fff;
             border: none;
             border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             margin-bottom: 20px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
         }
 
         .new-note-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(23, 122, 82, 0.35);
+            background: #0d6a49;
+            box-shadow: 0 5px 15px rgba(15, 122, 84, 0.3);
         }
 
         .notes-list {
