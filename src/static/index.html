@@ -1330,6 +1330,102 @@
         .modal-overlay {
             backdrop-filter: blur(2px);
         }
+
+        /* ==================================================================
+           P3 · desktop app-shell: 两栏各自独立滚动，页面本身不滚动
+           ================================================================== */
+        @media (min-width: 901px) {
+            html,
+            body {
+                height: 100%;
+            }
+
+            body {
+                overflow: hidden;
+            }
+
+            .container {
+                display: flex;
+                flex-direction: column;
+                height: 100dvh;
+                padding-top: 18px;
+                padding-bottom: 18px;
+                box-sizing: border-box;
+            }
+
+            .header {
+                flex: 0 0 auto;
+            }
+
+            .main-content {
+                flex: 1 1 auto;
+                min-height: 0;
+                align-items: stretch;
+            }
+
+            .sidebar {
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                padding-bottom: 0;
+                /* 覆盖基础样式里的 height: fit-content，否则 grid 拉伸不生效 */
+                height: 100%;
+                min-height: 0;
+            }
+
+            .sidebar > *:not(.notes-list) {
+                flex: 0 0 auto;
+            }
+
+            .notes-list {
+                flex: 1 1 auto;
+                min-height: 0;
+                max-height: none;
+                overflow-y: auto;
+                padding-bottom: 18px;
+            }
+
+            .note-editor {
+                overflow-y: auto;
+                max-height: 100%;
+            }
+
+            /* 桌面端压缩侧栏头部，把高度留给列表 */
+            .sidebar {
+                padding: 18px;
+            }
+
+            .header {
+                margin-bottom: 16px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+                margin-bottom: 6px;
+            }
+
+            .header p {
+                margin-bottom: 8px;
+            }
+
+            .new-note-row {
+                margin: 10px 0;
+            }
+
+            .view-toggle {
+                margin: 6px 0 0;
+            }
+
+            .tag-section {
+                margin: 8px 0;
+                padding: 8px 10px;
+            }
+
+            .tag-stats {
+                margin-top: 4px !important;
+                padding-top: 6px;
+            }
+        }
     </style>
 </head>
 <body>
