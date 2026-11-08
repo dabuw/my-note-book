@@ -196,6 +196,81 @@
             text-decoration: line-through;
         }
 
+        /* ---- new note split button + menu ---- */
+        .new-note-row {
+            position: relative;
+            display: flex;
+            gap: 6px;
+            margin: 12px 0;
+        }
+
+        .new-note-row .new-note-btn {
+            flex: 1;
+            margin: 0;
+        }
+
+        .new-note-caret {
+            width: 40px;
+            border: 1px solid rgba(15, 122, 84, 0.35);
+            border-radius: 10px;
+            background: #eaf6f0;
+            color: #0f7a54;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .new-note-caret:hover {
+            background: #dcefe5;
+        }
+
+        .new-note-menu {
+            position: absolute;
+            top: 46px;
+            right: 0;
+            z-index: 60;
+            min-width: 150px;
+            padding: 6px;
+            border: 1px solid #e3e8ee;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 10px 24px rgba(120, 100, 50, 0.18);
+        }
+
+        .new-note-menu button {
+            display: block;
+            width: 100%;
+            padding: 8px 10px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            font-family: inherit;
+            font-size: 13px;
+            text-align: left;
+            color: #374151;
+            cursor: pointer;
+        }
+
+        .new-note-menu button:hover {
+            background: #f2f9f5;
+            color: #0f7a54;
+        }
+
+        /* ---- editor back button (mobile only) ---- */
+        .editor-back {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            margin-right: 10px;
+            border: 1px solid #e3e8ee;
+            border-radius: 10px;
+            background: #fff;
+            font-size: 16px;
+            color: #0f7a54;
+            cursor: pointer;
+        }
+
         .view-toggle {
             display: flex;
             gap: 6px;
@@ -204,8 +279,8 @@
 
         .view-btn {
             flex: 1;
-            padding: 6px 0;
-            font-size: 12px;
+            padding: 5px 0;
+            font-size: 11px;
             font-family: inherit;
             color: #6b7280;
             background: #fff;
@@ -521,6 +596,63 @@
             }
         }
 
+        /* ---- mobile / tablet: single column, editor takes over ---- */
+        @media (max-width: 900px) {
+            .main-content {
+                display: block;
+            }
+
+            .note-editor {
+                display: none;
+            }
+
+            body.editing .sidebar {
+                display: none;
+            }
+
+            body.editing .note-editor {
+                display: flex;
+                min-height: calc(100dvh - 210px);
+            }
+
+            .editor-back {
+                display: inline-flex;
+            }
+
+            .header-actions {
+                position: static;
+                justify-content: center;
+                margin-bottom: 14px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .header {
+                margin-bottom: 18px;
+            }
+
+            .container {
+                padding: 14px;
+            }
+
+            .sidebar,
+            .note-editor {
+                padding: 18px;
+                border-radius: 14px;
+            }
+
+            .view-toggle {
+                margin: 8px 0 0;
+            }
+
+            .view-btn {
+                padding: 7px 0;
+                font-size: 12px;
+            }
+        }
+
         /* Custom Scrollbar */
         .notes-list::-webkit-scrollbar {
             width: 6px;
@@ -541,14 +673,43 @@
         }
 
         /* Tag Cloud Styles */
+        .tag-section {
+            margin: 12px 0;
+            padding: 10px 12px;
+            background: #fbfdfb;
+            border: 1px solid #e6ebe8;
+            border-radius: 10px;
+        }
+
+        .tag-section h4 {
+            margin: 0 0 8px;
+            color: #0f7a54;
+            font-size: 13px;
+        }
+
         .tag-cloud {
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             gap: 6px;
             margin: 8px 0;
-            min-height: 40px;
-            align-items: flex-start;
-            align-content: flex-start;
+            min-height: 34px;
+            align-items: center;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            scrollbar-width: thin;
+        }
+
+        .tag-cloud > * {
+            flex: 0 0 auto;
+        }
+
+        .tag-cloud::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .tag-cloud::-webkit-scrollbar-thumb {
+            background: rgba(15, 122, 84, 0.25);
+            border-radius: 999px;
         }
 
         .tag-item {
@@ -876,6 +1037,72 @@
                 font-size: 12px;
             }
         }
+
+        /* ---- mobile: final overrides (must stay last to win over base rules) ---- */
+        @media (max-width: 900px) {
+            .header-actions {
+                position: static;
+                justify-content: center;
+                margin: 0 0 14px;
+            }
+
+            .header h1 {
+                font-size: 1.7rem;
+                margin-bottom: 4px;
+            }
+
+            .header p {
+                font-size: 0.95rem;
+                margin-bottom: 10px;
+            }
+
+            .auth-bar {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+
+            .editor-header {
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-bottom: 14px;
+            }
+
+            .editor-title {
+                flex: 1 1 auto;
+                min-width: 0;
+                font-size: 1.15rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .editor-actions {
+                flex: 1 1 100%;
+                justify-content: flex-end;
+                gap: 8px;
+            }
+
+            .tag-stats {
+                display: none !important;
+            }
+
+            /* 编辑时隐藏大标题区，给正文腾出空间 */
+            body.editing .header {
+                display: none;
+            }
+
+            body.editing .container {
+                padding-top: 14px;
+            }
+
+            .editor-actions .btn {
+                flex: 1;
+                min-width: 0;
+                padding: 0 10px;
+                white-space: nowrap;
+            }
+        }
     </style>
 </head>
 <body>
@@ -902,7 +1129,15 @@
             <div class="sidebar">
                 <input type="text" class="search-box" id="searchBox"
                        data-i18n-placeholder="search.placeholder" placeholder="🔍 搜索笔记...">
-                <button class="new-note-btn" id="newNoteBtn" data-i18n="btn.newNote">✨ 新建笔记</button>
+                <div class="new-note-row">
+                    <button class="new-note-btn" id="newNoteBtn" data-i18n="btn.newNote">✨ 新建笔记</button>
+                    <button class="new-note-caret" id="newNoteCaret" type="button"
+                            data-i18n-title="newNote.more" title="更多新建方式">▾</button>
+                    <div class="new-note-menu" id="newNoteMenu" style="display:none;">
+                        <button type="button" data-new-mode="manual" data-i18n="newNote.manual">✍️ 手动写</button>
+                        <button type="button" data-new-mode="ai" data-i18n="newNote.ai">🤖 AI 生成</button>
+                    </div>
+                </div>
 
                 <div class="view-toggle" id="viewToggle">
                     <button class="view-btn active" type="button" data-view="list"
@@ -916,9 +1151,8 @@
                      data-i18n="guest.notice">📖 本站为只读展示，笔记内容由管理员维护。</div>
                 
                 <!-- Tag Cloud Section -->
-                <div style="margin: 15px 0; padding: 10px; background: #fff8dc; border-radius: 8px; border-left: 4px solid #ffa500;">
-                    <h4 style="margin: 0 0 10px 0; color: #ff8c00; font-size: 14px;"
-                        data-i18n="tagCloud.title">🏷️ 标签云</h4>
+                <div class="tag-section">
+                    <h4 data-i18n="tagCloud.title">🏷️ 标签云</h4>
                     <div id="tagCloud" class="tag-cloud">
                         <div class="loading" style="text-align: center; padding: 10px; font-size: 12px; color: #999;"
                              data-i18n="tagCloud.loading">标签加载中...</div>
@@ -929,7 +1163,7 @@
                 </div>
 
                 <!-- Generate Notes Section (owner only; hidden from guests) -->
-                <div id="aiPanel" style="margin: 15px 0; padding: 10px; background: #f2f9f5; border-radius: 8px; border-left: 4px solid #0f7a54;">
+                <div id="aiPanel" style="display:none; margin: 15px 0; padding: 10px; background: #f2f9f5; border-radius: 8px; border-left: 4px solid #0f7a54;">
                     <h4 style="margin: 0 0 10px 0; color: #0f7a54; font-size: 14px;">
                         <span data-i18n="ai.title">🤖 智能生成笔记</span>
                         <span id="aiQuotaHint" class="ai-quota-hint"></span>
@@ -948,6 +1182,8 @@
 
             <div class="note-editor">
                 <div class="editor-header">
+                    <button class="editor-back" id="editorBackBtn" type="button"
+                            data-i18n-title="editor.back" title="返回列表">←</button>
                     <h2 class="editor-title" id="editorTitle">选择一条笔记开始编辑</h2>
                     <div class="editor-actions" id="editorActions" style="display: none;">
                         <button class="btn btn-share" id="shareBtn" data-i18n="btn.share">🔗 分享</button>
@@ -1106,6 +1342,10 @@
             'ai.title': '🤖 Generate Notes',
             'ai.placeholder': 'Describe what happened today, your thoughts, or anything you want turned into a note...',
             'ai.button': '🚀 Generate Notes',
+            'newNote.more': 'More ways to create a note',
+            'newNote.manual': '✍️ Write manually',
+            'newNote.ai': '🤖 Generate with AI',
+            'editor.back': 'Back to list',
             'view.list': '📋 List',
             'view.timeline': '📅 Timeline',
             'btn.share': '🔗 Share',
@@ -1350,6 +1590,8 @@
                 // null = unlimited (owner); number = remaining guest AI calls today
                 this.aiQuota = null;
                 this.viewMode = 'list';
+                // AI 面板默认收起，从「新建笔记 → AI 生成」打开
+                this.aiPanelOpen = false;
                 try {
                     this.panelCollapsed = JSON.parse(localStorage.getItem('notetaker_panels') || '{}');
                 } catch (e) {
@@ -1485,6 +1727,34 @@
 
             bindEvents() {
                 document.getElementById('newNoteBtn').addEventListener('click', () => this.createNewNote());
+
+                // 移动端：从编辑区返回列表
+                document.getElementById('editorBackBtn').addEventListener('click', () => {
+                    document.body.classList.remove('editing');
+                    this.renderNotesList();
+                });
+
+                // 新建笔记下拉：手动写 / AI 生成
+                const caret = document.getElementById('newNoteCaret');
+                const menu = document.getElementById('newNoteMenu');
+                caret.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+                });
+                menu.querySelectorAll('button').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        menu.style.display = 'none';
+                        if (btn.dataset.newMode === 'ai') {
+                            this.aiPanelOpen = true;
+                            this.updateAuthUI();
+                            document.getElementById('aiPanel').scrollIntoView({ block: 'center', behavior: 'smooth' });
+                            document.getElementById('naturalLanguageInput').focus();
+                        } else {
+                            this.createNewNote();
+                        }
+                    });
+                });
+                document.addEventListener('click', () => { menu.style.display = 'none'; });
                 document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
@@ -1632,7 +1902,8 @@
                 const aiQuotaHint = document.getElementById('aiQuotaHint');
                 const guestAiAllowed = !this.authenticated && (this.aiQuota === null || this.aiQuota > 0);
                 if (aiPanel) {
-                    aiPanel.style.display = (this.authenticated || guestAiAllowed) ? 'block' : 'none';
+                    const allowed = this.authenticated || guestAiAllowed;
+                    aiPanel.style.display = (allowed && this.aiPanelOpen) ? 'block' : 'none';
                 }
                 if (aiQuotaHint) {
                     if (this.authenticated) {
@@ -2050,6 +2321,7 @@
             }
 
             showEditor() {
+                document.body.classList.add('editing');
                 document.getElementById('emptyState').style.display = 'none';
                 document.getElementById('editorForm').style.display = 'block';
                 document.getElementById('editorActions').style.display = 'flex';
