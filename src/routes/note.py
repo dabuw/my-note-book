@@ -1,3 +1,5 @@
+import secrets
+
 from flask import Blueprint, jsonify, request
 from datetime import datetime, time, date
 
@@ -35,7 +37,7 @@ def _may_read(note):
 @note_bp.route('/notes', methods=['GET'])
 def get_notes():
     """List notes visible to the current viewer, most recently updated first."""
-    notes = visible_notes_query().order_by(Note.updated_at.desc()).all()
+    notes = visible_notes_query().order_by(Note.pinned.desc(), Note.updated_at.desc()).all()
     return jsonify([serialize(note) for note in notes])
 
 
@@ -230,3 +232,45 @@ def delete_note(note_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+@note_bp.route('/notes/<int:note_id>/share', methods=['POST'])
+def share_note(note_id):
+    """Create (or return) a public read-only link for a note. Owner only."""
+    note = Note.query.get_or_404(note_id)
+    if not is_authenticated():
+        return jsonify({'error': 'auth_required', 'message': '该功能需要输入密码后使用'}), 401
+
+    if not note.share_token:
+        note.share_token = secrets.token_urlsafe(16)
+        db.session.commit()
+
+    return jsonify({
+        'share_token': note.share_token,
+        'url': request.host_url.rstrip('/') + '/s/' + note.share_token,
+    })
+
+
+@note_bp.route('/notes/<int:note_id>/share', methods=['DELETE'])
+def unshare_note(note_id):
+    """Revoke the public link for a note. Owner only."""
+    note = Note.query.get_or_404(note_id)
+    if not is_authenticated():
+        return jsonify({'error': 'auth_required', 'message': '该功能需要输入密码后使用'}), 401
+
+    note.share_token = None
+    db.session.commit()
+    return jsonify({'shared': False})
+
+
+@note_bp.route('/notes/<int:note_id>/pin', methods=['POST'])
+def pin_note(note_id):
+    """Pin a note to the top (or unpin it). Owner only."""
+    note = Note.query.get_or_404(note_id)
+    if not is_authenticated():
+        return jsonify({'error': 'auth_required', 'message': '该功能需要输入密码后使用'}), 401
+
+    data = request.get_json(silent=True) or {}
+    note.pinned = bool(data.get('pinned', not note.pinned))
+    db.session.commit()
+    return jsonify({'pinned': bool(note.pinned)})

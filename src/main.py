@@ -6,8 +6,9 @@ from datetime import timedelta
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from flask import Flask, send_from_directory
+from flask import Flask, render_template_string, send_from_directory
 from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
@@ -30,6 +31,10 @@ def _env_flag(name, default=False):
 
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
+
+# Behind the host Nginx: honour X-Forwarded-Proto/Host so generated absolute
+# URLs (e.g. share links) use https:// and the public hostname.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 # ---------------------------------------------------------------------------
 # Session / cookie security
@@ -103,9 +108,83 @@ def _sqlite_pragmas(dbapi_connection, connection_record):
         cursor.close()
 
 
+def _ensure_note_columns():
+    """Add columns introduced after the first deployment.
+
+    `create_all()` only creates missing tables, so an existing SQLite database
+    needs an explicit ALTER. The statements are idempotent and also work on
+    Postgres, which keeps the migration path identical on both backends.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+    if 'note' not in inspector.get_table_names():
+        return
+    existing = {column['name'] for column in inspector.get_columns('note')}
+
+    with db.engine.begin() as connection:
+        if 'share_token' not in existing:
+            connection.execute(text('ALTER TABLE note ADD COLUMN share_token VARCHAR(64)'))
+        if 'pinned' not in existing:
+            connection.execute(
+                text('ALTER TABLE note ADD COLUMN pinned BOOLEAN NOT NULL DEFAULT 0')
+            )
+        connection.execute(
+            text('CREATE UNIQUE INDEX IF NOT EXISTS ix_note_share_token ON note (share_token)')
+        )
+
+
 db.init_app(app)
 with app.app_context():
     db.create_all()
+    _ensure_note_columns()
+
+
+
+
+SHARE_PAGE = """<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ note.title }} · NoteTaker</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin:0; padding:48px 20px; background:#fdf8ec; color:#1f2937;
+         font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',Arial,sans-serif; }
+  .card { max-width:720px; margin:0 auto; background:#fff; border-radius:16px; padding:36px 40px;
+          box-shadow:0 8px 30px rgba(120,100,50,.12); }
+  h1 { margin:0 0 8px; font-size:26px; color:#0f7a54; }
+  .meta { margin:0 0 20px; font-size:13px; color:#8a8f98; }
+  .content { white-space:pre-wrap; line-height:1.85; font-size:15px; }
+  .tags { margin-top:24px; display:flex; flex-wrap:wrap; gap:8px; }
+  .tag { padding:3px 10px; border-radius:999px; background:#eaf6f0; color:#0f7a54; font-size:12px; }
+  .foot { max-width:720px; margin:20px auto 0; text-align:center; font-size:12px; color:#9aa0a6; }
+  .foot a { color:#0f7a54; text-decoration:none; }
+</style>
+</head>
+<body>
+  <article class="card">
+    <h1>{{ note.title }}</h1>
+    <p class="meta">{{ note.event_date or (note.updated_at.strftime('%Y-%m-%d') if note.updated_at else '') }}{% if note.event_time %} {{ note.event_time.strftime('%H:%M') }}{% endif %} · 来自 NoteTaker 的一条分享笔记</p>
+    <div class="content">{{ note.content }}</div>
+    {% if tags %}<div class="tags">{% for tag in tags %}<span class="tag">#{{ tag }}</span>{% endfor %}</div>{% endif %}
+  </article>
+  <p class="foot">由 <a href="https://notes.dabuw.online">NoteTaker</a> 分享 · 只读页面</p>
+</body>
+</html>"""
+
+
+
+@app.route('/s/<token>')
+def shared_note(token):
+    """Public read-only view of a single shared note."""
+    from src.models.note import Note
+
+    note = Note.query.filter_by(share_token=token).first()
+    if note is None:
+        return '分享链接已失效', 404
+    return render_template_string(SHARE_PAGE, note=note, tags=note.get_tags())
 
 
 @app.route('/api/health')

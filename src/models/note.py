@@ -32,6 +32,10 @@ class Note(db.Model):
     # Only notes flagged public are readable by other visitors.
     # Guests can never set this to True.
     is_public = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
+    # When set, the note is readable at /s/<token> without a password.
+    share_token = db.Column(db.String(64), nullable=True, unique=True, index=True)
+    # Owner-only: pinned notes sort above the rest.
+    pinned = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -86,6 +90,8 @@ class Note(db.Model):
             'event_date': self.event_date.isoformat() if self.event_date else None,
             'event_time': self.event_time.isoformat() if self.event_time else None,
             'is_public': bool(self.is_public),
+            'shared': bool(self.share_token),
+            'pinned': bool(self.pinned),
             'can_edit': can_edit,
             'created_at': iso_utc(self.created_at),
             'updated_at': iso_utc(self.updated_at)

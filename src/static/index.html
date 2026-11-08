@@ -117,6 +117,66 @@
             box-shadow: 0 5px 15px rgba(15, 122, 84, 0.3);
         }
 
+        .view-toggle {
+            display: flex;
+            gap: 6px;
+            margin: 8px 0 2px;
+        }
+
+        .view-btn {
+            flex: 1;
+            padding: 6px 0;
+            font-size: 12px;
+            font-family: inherit;
+            color: #6b7280;
+            background: #fff;
+            border: 1px solid #e3e8ee;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .view-btn.active {
+            color: #0f7a54;
+            border-color: rgba(15, 122, 84, 0.35);
+            background: #eaf6f0;
+            font-weight: 600;
+        }
+
+        .pin-btn {
+            margin-left: 6px;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            font-size: 12px;
+            opacity: 0.35;
+            cursor: pointer;
+            transition: opacity 0.15s ease;
+        }
+
+        .pin-btn:hover,
+        .pin-btn.on {
+            opacity: 1;
+        }
+
+        .timeline-group-title {
+            margin: 12px 0 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f7a54;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-share {
+            background: #eaf6f0;
+            color: #0f7a54;
+            border: 1px solid rgba(15, 122, 84, 0.3);
+        }
+
+        .btn-share:hover {
+            background: #dcefe5;
+        }
+
         .notes-list {
             max-height: 500px;
             overflow-y: auto;
@@ -765,6 +825,13 @@
                        data-i18n-placeholder="search.placeholder" placeholder="🔍 搜索笔记...">
                 <button class="new-note-btn" id="newNoteBtn" data-i18n="btn.newNote">✨ 新建笔记</button>
 
+                <div class="view-toggle" id="viewToggle">
+                    <button class="view-btn active" type="button" data-view="list"
+                            data-i18n="view.list">📋 列表</button>
+                    <button class="view-btn" type="button" data-view="timeline"
+                            data-i18n="view.timeline">📅 时间轴</button>
+                </div>
+
                 <!-- Shown when guest writing is disabled (GUEST_NOTE_LIMIT=0) -->
                 <div id="guestNotice" class="guest-notice" style="display:none;"
                      data-i18n="guest.notice">📖 本站为只读展示，笔记内容由管理员维护。</div>
@@ -804,6 +871,7 @@
                 <div class="editor-header">
                     <h2 class="editor-title" id="editorTitle">选择一条笔记开始编辑</h2>
                     <div class="editor-actions" id="editorActions" style="display: none;">
+                        <button class="btn btn-share" id="shareBtn" data-i18n="btn.share">🔗 分享</button>
                         <button class="btn btn-save" id="saveBtn" data-i18n="btn.save">💾 保存</button>
                         <button class="btn btn-delete" id="deleteBtn" data-i18n="btn.delete">🗑️ 删除</button>
                     </div>
@@ -904,6 +972,20 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="shareModal" style="display:none;">
+        <div class="modal">
+            <h3 data-i18n="share.title">🔗 分享这条笔记</h3>
+            <p class="modal-desc" data-i18n="share.desc">拿到链接的人可以只读查看这条笔记，不需要密码。</p>
+            <input type="text" class="form-input" id="shareUrl" readonly>
+            <div class="modal-error" id="shareError"></div>
+            <div class="modal-actions">
+                <button class="btn" type="button" id="shareCopyBtn" data-i18n="share.copy">复制链接</button>
+                <button class="btn btn-delete" type="button" id="shareRevokeBtn" data-i18n="share.revoke">取消分享</button>
+                <button class="btn" type="button" id="shareCloseBtn" data-i18n="share.close">关闭</button>
+            </div>
+        </div>
+    </div>
+
     <script>
 
         // ==================================================================
@@ -928,6 +1010,14 @@
             'ai.title': '🤖 Generate Notes',
             'ai.placeholder': 'Describe what happened today, your thoughts, or anything you want turned into a note...',
             'ai.button': '🚀 Generate Notes',
+            'view.list': '📋 List',
+            'view.timeline': '📅 Timeline',
+            'btn.share': '🔗 Share',
+            'share.title': '🔗 Share this note',
+            'share.desc': 'Anyone with the link can read this note. No password needed.',
+            'share.copy': 'Copy link',
+            'share.revoke': 'Stop sharing',
+            'share.close': 'Close',
             'ai.polish': '✨ Polish',
             'ai.summarize': '📝 Summary',
             'ai.todos': '✅ To-dos',
@@ -972,6 +1062,18 @@
                 'msg.aiTodoHeading': '**待办事项**',
                 'msg.aiApplied': '已应用到正文，记得保存',
                 'msg.aiError': 'AI 处理失败：{0}',
+                'pin.pin': '置顶',
+                'pin.unpin': '取消置顶',
+                'pin.error': '置顶操作失败',
+                'share.loading': '正在生成链接…',
+                'share.error': '分享操作失败，请重试',
+                'share.copied': '链接已复制',
+                'share.revoked': '已取消分享，链接立即失效',
+                'share.noNote': '请先选择一条笔记',
+                'timeline.today': '📌 今天',
+                'timeline.tomorrow': '📅 明天',
+                'timeline.yesterday': '🕘 昨天',
+                'timeline.noDate': '📎 未安排日期',
                 'auth.login': '🔑 输入密码',
                 'auth.adminLogin': '🔑 管理员登录',
                 'auth.logout': '🚪 退出登录',
@@ -1052,6 +1154,18 @@
                 'msg.aiTodoHeading': '**To-dos**',
                 'msg.aiApplied': 'Applied to the note, remember to save',
                 'msg.aiError': 'AI failed: {0}',
+                'pin.pin': 'Pin to top',
+                'pin.unpin': 'Unpin',
+                'pin.error': 'Could not update pin',
+                'share.loading': 'Generating link…',
+                'share.error': 'Sharing failed, please retry',
+                'share.copied': 'Link copied',
+                'share.revoked': 'Sharing stopped, the link is now invalid',
+                'share.noNote': 'Select a note first',
+                'timeline.today': '📌 Today',
+                'timeline.tomorrow': '📅 Tomorrow',
+                'timeline.yesterday': '🕘 Yesterday',
+                'timeline.noDate': '📎 No date',
                 'auth.login': '🔑 Enter password',
                 'auth.adminLogin': '🔑 Administrator sign-in',
                 'auth.logout': '🚪 Sign out',
@@ -1127,6 +1241,7 @@
                 this.guestNoteLimit = 1;
                 // null = unlimited (owner); number = remaining guest AI calls today
                 this.aiQuota = null;
+                this.viewMode = 'list';
                 this.init();
             }
 
@@ -1261,6 +1376,20 @@
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
                 document.getElementById('generateNotesBtn').addEventListener('click', () => this.generateNotes());
+                document.getElementById('shareBtn').addEventListener('click', () => this.openShare());
+                document.getElementById('shareCloseBtn').addEventListener('click', () => this.closeShare());
+                document.getElementById('shareCopyBtn').addEventListener('click', () => this.copyShare());
+                document.getElementById('shareRevokeBtn').addEventListener('click', () => this.revokeShare());
+                document.getElementById('shareModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'shareModal') this.closeShare();
+                });
+                document.querySelectorAll('.view-btn').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        this.viewMode = btn.dataset.view;
+                        document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b === btn));
+                        this.renderNotesList();
+                    });
+                });
                 document.querySelectorAll('.ai-tool-btn').forEach((btn) => {
                     btn.addEventListener('click', () => this.applyAiTool(btn.dataset.aiMode, btn));
                 });
@@ -1351,6 +1480,9 @@
                 // The public toggle is owner-only.
                 const group = document.getElementById('publicToggleGroup');
                 if (group) group.style.display = this.authenticated ? 'block' : 'none';
+
+                const shareBtn = document.getElementById('shareBtn');
+                if (shareBtn) shareBtn.style.display = this.authenticated ? '' : 'none';
 
                 // Hide every writing affordance from guests, not just disable it:
                 // a reviewer looking at a read-only site should not see input
@@ -1587,20 +1719,76 @@
 
             renderNotesList() {
                 const notesList = document.getElementById('notesList');
-                
+
                 if (this.notes.length === 0) {
                     notesList.innerHTML = `<div class="empty-state"><p>${this.t('msg.noNotes')}</p></div>`;
                     return;
                 }
 
-                notesList.innerHTML = this.notes.map(note => `
-                    <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}" 
+                if (this.viewMode === 'timeline') {
+                    this.renderTimeline(notesList);
+                    return;
+                }
+
+                notesList.innerHTML = this.notes.map(note => this.noteItemHtml(note)).join('');
+            }
+
+            /** One row in the sidebar list. */
+            noteItemHtml(note) {
+                const pin = this.authenticated
+                    ? `<button class="pin-btn ${note.pinned ? 'on' : ''}" type="button"
+                               title="${note.pinned ? this.t('pin.unpin') : this.t('pin.pin')}"
+                               onclick="event.stopPropagation(); noteTaker.togglePin(${note.id})">📌</button>`
+                    : '';
+                return `
+                    <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}"
                          data-note-id="${note.id}" onclick="noteTaker.selectNote(${note.id})">
-                        <div class="note-title">${this.escapeHtml(note.title || this.t('msg.untitledShort'))}${this.noteBadges(note)}</div>
+                        <div class="note-title">${this.escapeHtml(note.title || this.t('msg.untitledShort'))}${this.noteBadges(note)}${pin}</div>
                         <div class="note-preview">${this.escapeHtml(note.content || this.t('msg.noContent'))}</div>
                         <div class="note-date">${this.formatDate(note.updated_at)} ${note.event_date ? '· ' + note.event_date : ''} ${this.formatTime(note.event_time)}</div>
-                    </div>
-                `).join('');
+                    </div>`;
+            }
+
+            /** Group notes by their event date (today / tomorrow / earlier / no date). */
+            renderTimeline(container) {
+                const buckets = new Map();
+                this.notes.forEach((note) => {
+                    const key = note.event_date || this.t('timeline.noDate');
+                    if (!buckets.has(key)) buckets.set(key, []);
+                    buckets.get(key).push(note);
+                });
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const dayNumber = (note) => {
+                    if (!note.event_date) return Number.MAX_SAFE_INTEGER;
+                    const d = new Date(note.event_date + 'T00:00:00');
+                    return Math.round((d - today) / 86400000);
+                };
+
+                const keys = [...buckets.keys()].sort((a, b) => {
+                    if (a === this.t('timeline.noDate')) return 1;
+                    if (b === this.t('timeline.noDate')) return -1;
+                    return a.localeCompare(b);
+                });
+
+                container.innerHTML = keys.map((key) => {
+                    const label = key === this.t('timeline.noDate')
+                        ? key
+                        : this.dayLabel(key, dayNumber(buckets.get(key)[0]));
+                    const items = buckets.get(key)
+                        .sort((a, b) => (a.event_time || '').localeCompare(b.event_time || ''))
+                        .map((note) => this.noteItemHtml(note))
+                        .join('');
+                    return `<div class="timeline-group"><div class="timeline-group-title">${this.escapeHtml(label)}</div>${items}</div>`;
+                }).join('');
+            }
+
+            dayLabel(dateStr, diff) {
+                if (diff === 0) return this.t('timeline.today');
+                if (diff === 1) return this.t('timeline.tomorrow');
+                if (diff === -1) return this.t('timeline.yesterday');
+                return dateStr;
             }
 
             async selectNote(noteId) {
@@ -2160,6 +2348,90 @@
                         <div class="note-date">${this.formatDate(note.updated_at)}</div>
                     </div>
                 `).join('');
+            }
+
+
+            /** Pin / unpin a note (owner only). */
+            async togglePin(noteId) {
+                const note = this.notes.find(n => n.id === noteId);
+                if (!note) return;
+                try {
+                    const resp = await fetch(`/api/notes/${noteId}/pin`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ pinned: !note.pinned })
+                    });
+                    if (!resp.ok) {
+                        if (await this.handleAuthFailure(resp)) return;
+                        throw new Error('pin failed');
+                    }
+                    const data = await resp.json();
+                    note.pinned = !!data.pinned;
+                    // Keep the same ordering the server uses: pinned first.
+                    this.notes.sort((a, b) => (b.pinned === true) - (a.pinned === true));
+                    this.renderNotesList();
+                } catch (e) {
+                    this.showMessage(this.t('pin.error'), 'error');
+                }
+            }
+
+            /** Open the share dialog for the current note, creating a token on demand. */
+            async openShare() {
+                if (!this.currentNote || !this.currentNote.id) {
+                    this.showMessage(this.t('share.noNote'), 'error');
+                    return;
+                }
+                const modal = document.getElementById('shareModal');
+                const input = document.getElementById('shareUrl');
+                const err = document.getElementById('shareError');
+                err.textContent = '';
+                input.value = this.t('share.loading');
+                modal.style.display = 'flex';
+
+                try {
+                    const resp = await fetch(`/api/notes/${this.currentNote.id}/share`, { method: 'POST' });
+                    if (!resp.ok) {
+                        if (await this.handleAuthFailure(resp)) { this.closeShare(); return; }
+                        throw new Error('share failed');
+                    }
+                    const data = await resp.json();
+                    input.value = data.url;
+                    this.currentNote.shared = true;
+                } catch (e) {
+                    input.value = '';
+                    err.textContent = this.t('share.error');
+                }
+            }
+
+            closeShare() {
+                document.getElementById('shareModal').style.display = 'none';
+            }
+
+            async copyShare() {
+                const input = document.getElementById('shareUrl');
+                if (!input.value) return;
+                try {
+                    await navigator.clipboard.writeText(input.value);
+                    this.showMessage(this.t('share.copied'), 'success');
+                } catch (e) {
+                    input.select();
+                    document.execCommand('copy');
+                    this.showMessage(this.t('share.copied'), 'success');
+                }
+            }
+
+            async revokeShare() {
+                if (!this.currentNote || !this.currentNote.id) return;
+                try {
+                    const resp = await fetch(`/api/notes/${this.currentNote.id}/share`, { method: 'DELETE' });
+                    if (!resp.ok) throw new Error('revoke failed');
+                    this.currentNote.shared = false;
+                    document.getElementById('shareUrl').value = '';
+                    this.closeShare();
+                    this.showMessage(this.t('share.revoked'), 'success');
+                } catch (e) {
+                    document.getElementById('shareError').textContent = this.t('share.error');
+                }
             }
 
             showMessage(message, type) {
