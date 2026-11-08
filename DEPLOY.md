@@ -33,7 +33,7 @@ Docker 容器 notetaker（gunicorn + Flask，容器内 5001）
 |---|---|---|
 | 查看 | 仅 `is_public=true` 的笔记 + 自己创建的那条 | 全部 |
 | 创建 | 每 IP 最多 `GUEST_NOTE_LIMIT`（默认 1）条 | 无限 |
-| AI | 每天 `GUEST_AI_DAILY_LIMIT`（默认 3）次 | 无限 |
+| AI | 每天 `GUEST_AI_DAILY_LIMIT`（默认 5）次 | 无限 |
 | 修改 / 删除 | 仅自己创建的那条 | 全部 |
 | 设为公开 | ❌ 强制为私密 | ✅ |
 | AI 生成 / 翻译 | ❌ | ✅ |

@@ -144,7 +144,7 @@ def clear_login_attempts():
 # --------------------------------------------------------------------------
 # Guest AI quota
 #
-# Guests may try the AI endpoints a few times per day so the feature can be
+# Guests may try the AI endpoints a few times per day (default 5) so the feature can be
 # evaluated without the owner password. The counter is per client IP and kept
 # in process: the deployment runs a single gunicorn worker (see
 # gunicorn.conf.py), so this is authoritative. With several workers the quota
@@ -153,9 +153,9 @@ def clear_login_attempts():
 
 def guest_ai_daily_limit():
     try:
-        return max(0, int(os.environ.get("GUEST_AI_DAILY_LIMIT", "3")))
+        return max(0, int(os.environ.get("GUEST_AI_DAILY_LIMIT", "5")))
     except (TypeError, ValueError):
-        return 3
+        return 5
 
 
 _ai_usage = {}

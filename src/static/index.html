@@ -117,6 +117,50 @@
             box-shadow: 0 5px 15px rgba(15, 122, 84, 0.3);
         }
 
+        .todo-panel {
+            margin-top: 10px;
+            padding: 12px 14px;
+            border: 1px solid #e3e8ee;
+            border-radius: 10px;
+            background: #fbfdfb;
+        }
+
+        .todo-panel-title {
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f7a54;
+        }
+
+        .todo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+            cursor: pointer;
+        }
+
+        .todo-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin-top: 3px;
+            accent-color: #0f7a54;
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+
+        .todo-item.done span {
+            color: #9aa0a6;
+            text-decoration: line-through;
+        }
+
         .view-toggle {
             display: flex;
             gap: 6px;
@@ -901,6 +945,10 @@
                         </div>
                         <textarea class="form-textarea" id="noteContent"
                                   data-i18n-placeholder="form.contentPlaceholder" placeholder="开始写你的笔记..."></textarea>
+                        <div id="todoPanel" class="todo-panel" style="display:none;">
+                            <div class="todo-panel-title" data-i18n="todo.title">✅ 待办清单（点击方框勾选）</div>
+                            <div id="todoList" class="todo-list"></div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="noteTags" data-i18n="form.tags">标签（用逗号分隔）</label>
@@ -1018,6 +1066,7 @@
             'share.copy': 'Copy link',
             'share.revoke': 'Stop sharing',
             'share.close': 'Close',
+            'todo.title': '✅ Checklist (click a box to tick it)',
             'ai.polish': '✨ Polish',
             'ai.summarize': '📝 Summary',
             'ai.todos': '✅ To-dos',
@@ -1406,7 +1455,15 @@
                 };
                 
                 document.getElementById('noteTitle').addEventListener('input', autoSave);
-                document.getElementById('noteContent').addEventListener('input', autoSave);
+                document.getElementById('noteContent').addEventListener('input', () => {
+                    autoSave();
+                    this.renderTodoPanel();
+                });
+                document.getElementById('todoList').addEventListener('change', (e) => {
+                    const box = e.target;
+                    if (!box || box.type !== 'checkbox') return;
+                    this.toggleTodoItem(Number(box.dataset.todoIndex), box.checked);
+                });
 
                 // --- auth controls ---
                 document.getElementById('authBtn').addEventListener('click', () => this.onAuthButtonClick());
@@ -1812,6 +1869,7 @@
                 document.getElementById('notePublic').checked = !!note.is_public;
                 document.getElementById('editorTitle').textContent = note.title || this.t('msg.untitled');
                 this.setReadOnly(!note.can_edit);
+                this.renderTodoPanel();
             }
 
             /** Lock the editor for notes the current viewer may only read. */
@@ -1820,6 +1878,8 @@
                     const el = document.getElementById(id);
                     if (el) el.readOnly = readonly;
                 });
+
+                this.renderTodoPanel();
 
                 const banner = document.getElementById('readonlyBanner');
                 banner.style.display = readonly ? 'block' : 'none';
@@ -2350,6 +2410,53 @@
                 `).join('');
             }
 
+
+            /** Render the checklist parsed from the note content, if any. */
+            renderTodoPanel() {
+                const contentEl = document.getElementById('noteContent');
+                const panel = document.getElementById('todoPanel');
+                const list = document.getElementById('todoList');
+                if (!contentEl || !panel || !list) return;
+
+                const pattern = /^\s*-\s*\[( |x|X)\]\s*(.*)$/;
+                const items = [];
+                contentEl.value.split('\n').forEach((line) => {
+                    const m = line.match(pattern);
+                    if (m) items.push({ done: m[1].toLowerCase() === 'x', text: m[2].trim() });
+                });
+
+                if (!items.length) {
+                    panel.style.display = 'none';
+                    list.innerHTML = '';
+                    return;
+                }
+
+                const readonly = contentEl.readOnly;
+                list.innerHTML = items.map((item, index) => `
+                    <label class="todo-item ${item.done ? 'done' : ''}">
+                        <input type="checkbox" data-todo-index="${index}"
+                               ${item.done ? 'checked' : ''} ${readonly ? 'disabled' : ''}>
+                        <span>${this.escapeHtml(item.text || '')}</span>
+                    </label>`).join('');
+                panel.style.display = 'block';
+            }
+
+            /** Flip one checklist item in the content and auto-save. */
+            toggleTodoItem(index, checked) {
+                const contentEl = document.getElementById('noteContent');
+                const pattern = /^(\s*-\s*\[)( |x|X)(\]\s*)(.*)$/;
+                let seen = -1;
+                const lines = contentEl.value.split('\n').map((line) => {
+                    const m = line.match(pattern);
+                    if (!m) return line;
+                    seen += 1;
+                    if (seen !== index) return line;
+                    return `${m[1]}${checked ? 'x' : ' '}${m[3]}${m[4]}`;
+                });
+                contentEl.value = lines.join('\n');
+                contentEl.dispatchEvent(new Event('input'));
+                this.renderTodoPanel();
+            }
 
             /** Pin / unpin a note (owner only). */
             async togglePin(noteId) {
