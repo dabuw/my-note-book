@@ -139,3 +139,90 @@ def clear_login_attempts():
     ip = client_ip()
     with _attempts_lock:
         _attempts.pop(ip, None)
+
+
+# --------------------------------------------------------------------------
+# Guest AI quota
+#
+# Guests may try the AI endpoints a few times per day so the feature can be
+# evaluated without the owner password. The counter is per client IP and kept
+# in process: the deployment runs a single gunicorn worker (see
+# gunicorn.conf.py), so this is authoritative. With several workers the quota
+# would be per worker — acceptable for a demo, documented in DEPLOY.md.
+# --------------------------------------------------------------------------
+
+def guest_ai_daily_limit():
+    try:
+        return max(0, int(os.environ.get("GUEST_AI_DAILY_LIMIT", "3")))
+    except (TypeError, ValueError):
+        return 3
+
+
+_ai_usage = {}
+_ai_usage_lock = threading.Lock()
+
+
+def _today():
+    return time.strftime("%Y-%m-%d")
+
+
+def _ai_used_today(ip):
+    day, count = _ai_usage.get(ip, (_today(), 0))
+    return count if day == _today() else 0
+
+
+def ai_quota_remaining():
+    """Remaining AI calls for the caller, or None when unlimited (owner)."""
+    if is_authenticated():
+        return None
+    limit = guest_ai_daily_limit()
+    with _ai_usage_lock:
+        return max(0, limit - _ai_used_today(client_ip()))
+
+
+def record_ai_usage():
+    """Count one AI call against the guest quota (no-op for the owner)."""
+    if is_authenticated():
+        return
+    ip = client_ip()
+    with _ai_usage_lock:
+        # Keep the dict from growing forever on a long-running process.
+        if len(_ai_usage) > 5000:
+            _ai_usage.clear()
+        _ai_usage[ip] = (_today(), _ai_used_today(ip) + 1)
+
+
+def ai_allowed(fn):
+    """Allow the owner through, and guests up to their daily AI quota."""
+
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        remaining = ai_quota_remaining()
+        if remaining is not None and remaining <= 0:
+            return (
+                jsonify(
+                    {
+                        "error": "ai_quota_exceeded",
+                        "message": "今日 AI 体验次数已用完，输入密码后可无限使用",
+                        "ai_quota_remaining": 0,
+                    }
+                ),
+                429,
+            )
+
+        response = fn(*args, **kwargs)
+
+        # Only successful calls consume quota, so a failed attempt is free.
+        status = response[1] if isinstance(response, tuple) else 200
+        if 200 <= status < 300:
+            record_ai_usage()
+            if isinstance(response, tuple):
+                payload = response[0]
+                if hasattr(payload, "get_json"):
+                    body = payload.get_json() or {}
+                    body["ai_quota_remaining"] = ai_quota_remaining()
+                    return jsonify(body), status
+            return response
+        return response
+
+    return wrapper

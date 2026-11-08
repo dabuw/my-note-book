@@ -5,14 +5,14 @@ import sys
 # Add project root to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from src.auth import login_required
+from src.auth import ai_allowed
 from src.call_llm_model import process_user_notes
 
 generate_bp = Blueprint('generate', __name__)
 
 
 @generate_bp.route('/generate-notes', methods=['POST'])
-@login_required
+@ai_allowed
 def generate_notes():
     """Turn free-form text into a structured note.
 

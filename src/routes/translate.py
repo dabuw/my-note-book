@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from src.auth import login_required
+from src.auth import ai_allowed
 from src.llm import is_configured, translate
 
 translate_bp = Blueprint('translate', __name__)
@@ -11,7 +11,7 @@ MAX_TRANSLATE_CHARS = 20000
 
 
 @translate_bp.route('/translate', methods=['POST'])
-@login_required
+@ai_allowed
 def translate_text():
     """Translate text via the configured LLM.
 

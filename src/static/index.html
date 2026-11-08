@@ -457,6 +457,14 @@
             border-color: #0f7a54;
         }
 
+        .ai-quota-hint {
+            margin-left: 8px;
+            font-size: 12px;
+            font-weight: 400;
+            color: #0f7a54;
+            opacity: 0.8;
+        }
+
         .role-hint {
             font-size: 12px;
             color: #6b5d38;
@@ -713,8 +721,10 @@
 
                 <!-- Generate Notes Section (owner only; hidden from guests) -->
                 <div id="aiPanel" style="margin: 15px 0; padding: 10px; background: #f2f9f5; border-radius: 8px; border-left: 4px solid #0f7a54;">
-                    <h4 style="margin: 0 0 10px 0; color: #0f7a54; font-size: 14px;"
-                        data-i18n="ai.title">🤖 智能生成笔记</h4>
+                    <h4 style="margin: 0 0 10px 0; color: #0f7a54; font-size: 14px;">
+                        <span data-i18n="ai.title">🤖 智能生成笔记</span>
+                        <span id="aiQuotaHint" class="ai-quota-hint"></span>
+                    </h4>
                     <textarea id="naturalLanguageInput" data-i18n-placeholder="ai.placeholder"
                               placeholder="描述今天发生了什么、你的想法，或任何想变成笔记的内容..."
                               style="width: 100%; min-height: 80px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
@@ -874,6 +884,9 @@
                 'role.hintReadonly': '笔记由管理员维护',
                 'role.hintQuota': '可创建 {0} 条笔记，仅自己可见',
                 'role.hintQuotaUsed': '创建额度已用完，需要获得管理员权限',
+                'ai.quotaLeft': '（今日剩余 {0} 次免费 AI）',
+                'ai.quotaUsed': '（今日免费额度已用完）',
+                'err.ai_quota_exceeded': '今日 AI 体验次数已用完，输入密码后可无限使用，明天额度会重置',
                 'auth.login': '🔑 输入密码',
                 'auth.adminLogin': '🔑 管理员登录',
                 'auth.logout': '🚪 退出登录',
@@ -944,6 +957,9 @@
                 'role.hintReadonly': 'Notes are maintained by the administrator',
                 'role.hintQuota': 'You can create {0} note(s), visible only to you',
                 'role.hintQuotaUsed': 'Guest quota used up; administrator access required',
+                'ai.quotaLeft': '({0} free AI calls left today)',
+                'ai.quotaUsed': '(daily free quota used up)',
+                'err.ai_quota_exceeded': 'Daily free AI trial used up. Sign in with the password for unlimited use; the quota resets tomorrow.',
                 'auth.login': '🔑 Enter password',
                 'auth.adminLogin': '🔑 Administrator sign-in',
                 'auth.logout': '🚪 Sign out',
@@ -1017,6 +1033,8 @@
                 this.role = 'guest';
                 this.authenticated = false;
                 this.guestNoteLimit = 1;
+                // null = unlimited (owner); number = remaining guest AI calls today
+                this.aiQuota = null;
                 this.init();
             }
 
@@ -1194,6 +1212,9 @@
                     if (data.guest_note_limit !== undefined) {
                         this.guestNoteLimit = data.guest_note_limit;
                     }
+                    if (data.ai_quota_remaining !== undefined) {
+                        this.aiQuota = data.ai_quota_remaining;
+                    }
                 } catch (e) {
                     // Fail closed: treat as guest if we cannot confirm the session.
                     this.role = 'guest';
@@ -1245,9 +1266,22 @@
                 const guestNotice = document.getElementById('guestNotice');
                 if (guestNotice) guestNotice.style.display = readOnlySite ? 'block' : 'none';
 
-                // AI features are owner-only and hidden entirely from guests.
+                // AI features: the owner is unlimited, guests get a daily quota.
                 const aiPanel = document.getElementById('aiPanel');
-                if (aiPanel) aiPanel.style.display = this.authenticated ? 'block' : 'none';
+                const aiQuotaHint = document.getElementById('aiQuotaHint');
+                const guestAiAllowed = !this.authenticated && (this.aiQuota === null || this.aiQuota > 0);
+                if (aiPanel) {
+                    aiPanel.style.display = (this.authenticated || guestAiAllowed) ? 'block' : 'none';
+                }
+                if (aiQuotaHint) {
+                    if (this.authenticated) {
+                        aiQuotaHint.textContent = '';
+                    } else if (typeof this.aiQuota === 'number') {
+                        aiQuotaHint.textContent = this.aiQuota > 0
+                            ? this.t('ai.quotaLeft', this.aiQuota)
+                            : this.t('ai.quotaUsed');
+                    }
+                }
             }
 
             myGuestNoteCount() {
@@ -1340,6 +1374,15 @@
              * Returns true when the response was an auth problem already handled.
              */
             async handleAuthFailure(resp) {
+                if (resp.status === 429) {
+                    const data = await resp.json().catch(() => ({}));
+                    if (data.error === 'ai_quota_exceeded') {
+                        this.aiQuota = 0;
+                        this.updateAuthUI();
+                        this.showMessage(this.errText(data), 'error');
+                        return true;
+                    }
+                }
                 if (resp.status === 401) {
                     this.openLogin(this.t('err.auth_required'));
                     return true;
@@ -1655,6 +1698,13 @@
                     }
 
                     const data = await response.json();
+                    if (data.ai_quota_remaining !== undefined) {
+                        this.aiQuota = data.ai_quota_remaining;
+                        this.updateAuthUI();
+                    } else if (!this.authenticated) {
+                        // Quota is tracked server-side; refresh it after each call.
+                        this.loadAuthStatus();
+                    }
 
                     // Create a new note with the generated content
                     this.createNewNote();

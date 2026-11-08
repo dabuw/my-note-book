@@ -63,11 +63,12 @@ NoteTaker 是一个**自托管的个人笔记应用**。它的核心想法是：
 | 创建 | 每 IP 最多 `GUEST_NOTE_LIMIT` 条 | 无限 |
 | 修改 / 删除 | 仅自己创建的那条 | 全部 |
 | 设为公开 | ❌ 强制私密 | ✅ |
-| AI 生成 / 翻译 | ❌ | ✅ |
+| AI 生成 / 翻译 | 每天 `GUEST_AI_DAILY_LIMIT` 次 | 无限 |
 
 两个关键设计：
 
 - **访客创建的内容永远是私密的**，只有创建它的那个 IP 能看到，无法变成公开内容。公开与否只能由登录后的使用者决定。
+- **游客也能试用 AI**：`GUEST_AI_DAILY_LIMIT`（默认 3）控制每个 IP 每天的调用次数，用量按天重置；输入密码后不受限制。计数在进程内完成，因此保持 `GUNICORN_WORKERS=1`。
 - **`GUEST_NOTE_LIMIT=0` 即只读展示模式**：游客不能创建任何内容，前端也会把「新建笔记」按钮和整个 AI 面板从游客视图中移除（不是置灰，而是不渲染）。用于站点以「非交互式」性质办理备案期间。
 
 ## 技术栈
@@ -144,6 +145,7 @@ python src/main.py          # 默认监听 127.0.0.1:5001
 | `SECRET_KEY` | **必填**，会话签名密钥，弱值会导致启动失败 |
 | `APP_PASSWORD` | **必填**，使用者模式的共享密码 |
 | `GUEST_NOTE_LIMIT` | 每 IP 游客可创建条数；`0` 表示只读展示模式 |
+| `GUEST_AI_DAILY_LIMIT` | 每 IP 游客每天可调用的 AI 次数；`0` 表示游客不可用 AI |
 | `LLM_BASE_URL` / `LLM_MODEL` / `LLM_API_KEY` | AI 接口配置，留空则优雅降级 |
 | `SESSION_COOKIE_SECURE` | 生产环境保持 `true`（经 HTTPS 提供服务） |
 | `SESSION_LIFETIME_DAYS` | 登录态有效期 |

@@ -8,6 +8,7 @@ any endpoint.
 from flask import Blueprint, jsonify, request, session
 
 from src.auth import (
+    ai_quota_remaining,
     check_password,
     clear_login_attempts,
     current_role,
@@ -27,6 +28,7 @@ def auth_status():
             "role": current_role(),
             "authenticated": is_authenticated(),
             "guest_note_limit": guest_note_limit(),
+            "ai_quota_remaining": ai_quota_remaining(),
         }
     )
 
