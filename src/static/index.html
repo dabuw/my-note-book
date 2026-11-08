@@ -640,12 +640,18 @@
             vertical-align: middle;
         }
 
-        /* ---- language switch, pinned to the top-right corner ---- */
-        .lang-switch {
+        /* ---- top-right actions (portfolio link + language switch) ---- */
+        .header-actions {
             position: absolute;
             top: 20px;
             right: 20px;
             z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .lang-switch {
             display: inline-flex;
             align-items: center;
             gap: 6px;
@@ -671,10 +677,19 @@
             transform: translateY(0);
         }
 
+        /* keep the two pills visually identical: no underline, same font */
+        .home-link {
+            text-decoration: none;
+        }
+
         @media (max-width: 640px) {
-            .lang-switch {
+            .header-actions {
                 top: 12px;
                 right: 12px;
+                gap: 6px;
+            }
+
+            .lang-switch {
                 padding: 6px 12px;
                 font-size: 12px;
             }
@@ -683,8 +698,13 @@
 </head>
 <body>
     <div class="container">
-        <button class="lang-switch" id="langSwitch" type="button"
-                data-i18n-title="lang.switchTitle" title="切换到英文">🌐 English</button>
+        <div class="header-actions">
+            <a class="lang-switch home-link" href="https://dabuw.online" target="_blank" rel="noopener"
+               data-i18n="header.home" data-i18n-title="header.homeTitle"
+               title="返回作者主页">🏠 作者主页</a>
+            <button class="lang-switch" id="langSwitch" type="button"
+                    data-i18n-title="lang.switchTitle" title="切换到英文">🌐 English</button>
+        </div>
 
         <div class="header">
             <h1>📝 NoteTaker</h1>
@@ -844,6 +864,8 @@
         const I18N_EN = {
             'doc.title': 'NoteTaker - Personal Note Manager',
             'header.tagline': 'Capture your thoughts as they come',
+            'header.home': '🏠 Portfolio',
+            'header.homeTitle': 'Back to my portfolio',
             'lang.switchTitle': '切换到中文',
             'search.placeholder': '🔍 Search notes...',
             'btn.newNote': '✨ New Note',
