@@ -36,6 +36,10 @@ class Note(db.Model):
     share_token = db.Column(db.String(64), nullable=True, unique=True, index=True)
     # Owner-only: pinned notes sort above the rest.
     pinned = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
+    # AI generated summary, shown above the content (never mixed into it).
+    summary = db.Column(db.Text, nullable=True)
+    # AI generated checklist, stored as a JSON array of {"text", "done"}.
+    todos = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -70,6 +74,39 @@ class Note(db.Model):
         except Exception:
             self.tags = None
 
+    def get_todos(self):
+        """Return the AI checklist as a list of {text, done} dicts."""
+        if not self.todos:
+            return []
+        try:
+            data = json.loads(self.todos)
+        except Exception:
+            return []
+        if not isinstance(data, list):
+            return []
+        result = []
+        for item in data:
+            if isinstance(item, dict):
+                result.append({'text': str(item.get('text', '')), 'done': bool(item.get('done', False))})
+            elif isinstance(item, str):
+                result.append({'text': item, 'done': False})
+        return result
+
+    def set_todos(self, todos):
+        """Persist a list of {text, done} dicts (or plain strings)."""
+        if todos is None:
+            self.todos = None
+            return
+        cleaned = []
+        for item in todos:
+            if isinstance(item, dict):
+                text = str(item.get('text', '')).strip()
+                if text:
+                    cleaned.append({'text': text, 'done': bool(item.get('done', False))})
+            elif isinstance(item, str) and item.strip():
+                cleaned.append({'text': item.strip(), 'done': False})
+        self.todos = json.dumps(cleaned, ensure_ascii=False) if cleaned else None
+
     def to_dict(self, viewer_ip=None, role='guest'):
         """Serialise the note for a viewer.
 
@@ -91,6 +128,8 @@ class Note(db.Model):
             'event_time': self.event_time.isoformat() if self.event_time else None,
             'is_public': bool(self.is_public),
             'shared': bool(self.share_token),
+            'summary': self.summary or '',
+            'todos': self.get_todos(),
             'pinned': bool(self.pinned),
             'can_edit': can_edit,
             'created_at': iso_utc(self.created_at),

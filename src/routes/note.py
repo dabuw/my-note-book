@@ -200,6 +200,14 @@ def update_note(note_id):
             else:
                 note.event_time = None
 
+        # AI generated summary / checklist live outside the content so the
+        # note body stays exactly what the user typed.
+        if 'summary' in data:
+            summary = (data.get('summary') or '').strip()
+            note.summary = summary or None
+        if 'todos' in data:
+            note.set_todos(data.get('todos'))
+
         # Only the owner may change visibility; guests stay private.
         if 'is_public' in data and is_authenticated():
             note.is_public = bool(data.get('is_public'))

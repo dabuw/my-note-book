@@ -117,19 +117,54 @@
             box-shadow: 0 5px 15px rgba(15, 122, 84, 0.3);
         }
 
-        .todo-panel {
-            margin-top: 10px;
+        .ai-result-panel {
+            margin: 10px 0;
             padding: 12px 14px;
             border: 1px solid #e3e8ee;
             border-radius: 10px;
             background: #fbfdfb;
         }
 
-        .todo-panel-title {
+        .panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
             margin-bottom: 8px;
+        }
+
+        .panel-title {
             font-size: 12px;
             font-weight: 700;
             color: #0f7a54;
+        }
+
+        .panel-toggle {
+            padding: 2px 8px;
+            font-size: 11px;
+            font-family: inherit;
+            color: #6b7280;
+            background: #fff;
+            border: 1px solid #e3e8ee;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+
+        .panel-toggle:hover {
+            color: #0f7a54;
+            border-color: rgba(15, 122, 84, 0.35);
+        }
+
+        .ai-result-panel.collapsed .panel-body,
+        .ai-result-panel.collapsed .todo-list {
+            display: none;
+        }
+
+        .panel-body {
+            font-size: 14px;
+            line-height: 1.7;
+            color: #374151;
+            white-space: pre-wrap;
         }
 
         .todo-list {
@@ -931,6 +966,15 @@
                                data-i18n-placeholder="form.titlePlaceholder" placeholder="输入笔记标题...">
                     </div>
 
+                    <div id="summaryPanel" class="ai-result-panel" style="display:none;">
+                        <div class="panel-head">
+                            <span class="panel-title" data-i18n="summary.title">📝 AI 摘要</span>
+                            <button class="panel-toggle" type="button" id="summaryToggle"
+                                    data-i18n="panel.hide">隐藏</button>
+                        </div>
+                        <div id="summaryBody" class="panel-body"></div>
+                    </div>
+
                     <div class="form-group">
                         <div class="editor-toolbar">
                             <label class="form-label" for="noteContent" data-i18n="form.content">内容</label>
@@ -945,8 +989,12 @@
                         </div>
                         <textarea class="form-textarea" id="noteContent"
                                   data-i18n-placeholder="form.contentPlaceholder" placeholder="开始写你的笔记..."></textarea>
-                        <div id="todoPanel" class="todo-panel" style="display:none;">
-                            <div class="todo-panel-title" data-i18n="todo.title">✅ 待办清单（点击方框勾选）</div>
+                        <div id="todoPanel" class="ai-result-panel" style="display:none;">
+                            <div class="panel-head">
+                                <span class="panel-title" data-i18n="todo.title">✅ 待办清单</span>
+                                <button class="panel-toggle" type="button" id="todoToggle"
+                                        data-i18n="panel.hide">隐藏</button>
+                            </div>
                             <div id="todoList" class="todo-list"></div>
                         </div>
                     </div>
@@ -1066,7 +1114,10 @@
             'share.copy': 'Copy link',
             'share.revoke': 'Stop sharing',
             'share.close': 'Close',
-            'todo.title': '✅ Checklist (click a box to tick it)',
+            'todo.title': '✅ Checklist',
+            'summary.title': '📝 AI summary',
+            'panel.hide': 'Hide',
+            'panel.show': 'Show',
             'ai.polish': '✨ Polish',
             'ai.summarize': '📝 Summary',
             'ai.todos': '✅ To-dos',
@@ -1111,6 +1162,10 @@
                 'msg.aiTodoHeading': '**待办事项**',
                 'msg.aiApplied': '已应用到正文，记得保存',
                 'msg.aiError': 'AI 处理失败：{0}',
+                'msg.aiSummaryApplied': '摘要已生成并保存（可随时隐藏）',
+                'msg.aiTodoApplied': '待办清单已生成并保存（可勾选）',
+                'panel.hide': '隐藏',
+                'panel.show': '显示',
                 'pin.pin': '置顶',
                 'pin.unpin': '取消置顶',
                 'pin.error': '置顶操作失败',
@@ -1203,6 +1258,10 @@
                 'msg.aiTodoHeading': '**To-dos**',
                 'msg.aiApplied': 'Applied to the note, remember to save',
                 'msg.aiError': 'AI failed: {0}',
+                'msg.aiSummaryApplied': 'Summary generated and saved (you can hide it)',
+                'msg.aiTodoApplied': 'Checklist generated and saved (tick away)',
+                'panel.hide': 'Hide',
+                'panel.show': 'Show',
                 'pin.pin': 'Pin to top',
                 'pin.unpin': 'Unpin',
                 'pin.error': 'Could not update pin',
@@ -1291,6 +1350,11 @@
                 // null = unlimited (owner); number = remaining guest AI calls today
                 this.aiQuota = null;
                 this.viewMode = 'list';
+                try {
+                    this.panelCollapsed = JSON.parse(localStorage.getItem('notetaker_panels') || '{}');
+                } catch (e) {
+                    this.panelCollapsed = {};
+                }
                 this.init();
             }
 
@@ -1425,6 +1489,19 @@
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
                 document.getElementById('generateNotesBtn').addEventListener('click', () => this.generateNotes());
+                const bindPanelToggle = (name, buttonId, panelId) => {
+                    const btn = document.getElementById(buttonId);
+                    if (!btn) return;
+                    btn.addEventListener('click', () => {
+                        const panel = document.getElementById(panelId);
+                        const collapsed = !panel.classList.contains('collapsed');
+                        this.setPanelCollapsed(name, collapsed);
+                        this.applyPanelCollapsed(name, panel);
+                    });
+                };
+                bindPanelToggle('summary', 'summaryToggle', 'summaryPanel');
+                bindPanelToggle('todo', 'todoToggle', 'todoPanel');
+
                 document.getElementById('shareBtn').addEventListener('click', () => this.openShare());
                 document.getElementById('shareCloseBtn').addEventListener('click', () => this.closeShare());
                 document.getElementById('shareCopyBtn').addEventListener('click', () => this.copyShare());
@@ -1692,17 +1769,36 @@
                         return;
                     }
 
+                    if (!this.currentNote) this.currentNote = {};
+
                     if (mode === 'polish') {
+                        // Polish is the only mode that rewrites the body itself.
                         contentEl.value = result;
+                        contentEl.dispatchEvent(new Event('input'));
+                        this.showMessage(this.t('msg.aiApplied'), 'success');
                     } else if (mode === 'summarize') {
-                        contentEl.value = `> ${this.t('msg.aiSummaryPrefix')}${result}\n\n${contentEl.value}`;
+                        this.currentNote.summary = result;
+                        this.setPanelCollapsed('summary', false);
+                        this.renderSummaryPanel();
+                        this.saveNote(true);
+                        this.showMessage(this.t('msg.aiSummaryApplied'), 'success');
                     } else {
-                        contentEl.value = `${contentEl.value.replace(/\s+$/, '')}\n\n${this.t('msg.aiTodoHeading')}\n${result}\n`;
+                        const todos = result
+                            .split('\n')
+                            .map((line) => line.replace(/^\s*-\s*\[( |x|X)\]\s*/, '').trim())
+                            .filter(Boolean)
+                            .map((text) => ({ text, done: false }));
+                        if (!todos.length) {
+                            this.showMessage(this.t('msg.aiEmptyResult'), 'error');
+                            return;
+                        }
+                        this.currentNote.todos = todos;
+                        this.setPanelCollapsed('todo', false);
+                        this.renderTodoPanel();
+                        this.saveNote(true);
+                        this.showMessage(this.t('msg.aiTodoApplied'), 'success');
                     }
 
-                    // Reuse the existing debounced auto-save path.
-                    contentEl.dispatchEvent(new Event('input'));
-                    this.showMessage(this.t('msg.aiApplied'), 'success');
                     if (!this.authenticated) this.loadAuthStatus();
                 } catch (e) {
                     this.showMessage(this.t('msg.aiError', e.message), 'error');
@@ -1869,6 +1965,7 @@
                 document.getElementById('notePublic').checked = !!note.is_public;
                 document.getElementById('editorTitle').textContent = note.title || this.t('msg.untitled');
                 this.setReadOnly(!note.can_edit);
+                this.renderSummaryPanel();
                 this.renderTodoPanel();
             }
 
@@ -1879,6 +1976,7 @@
                     if (el) el.readOnly = readonly;
                 });
 
+                this.renderSummaryPanel();
                 this.renderTodoPanel();
 
                 const banner = document.getElementById('readonlyBanner');
@@ -2006,7 +2104,9 @@
                         content: content,
                         tags: document.getElementById('noteTags').value ? document.getElementById('noteTags').value.split(',').map(t => t.trim()).filter(Boolean) : [],
                         event_date: document.getElementById('noteEventDate').value || null,
-                        event_time: document.getElementById('noteEventTime').value || null
+                        event_time: document.getElementById('noteEventTime').value || null,
+                        summary: (this.currentNote && this.currentNote.summary) || '',
+                        todos: (this.currentNote && Array.isArray(this.currentNote.todos)) ? this.currentNote.todos : []
                     };
 
                     // Only the owner may change visibility; the server ignores
@@ -2411,51 +2511,81 @@
             }
 
 
-            /** Render the checklist parsed from the note content, if any. */
+            /** Current note's UI panel state (collapsed summary / todo). */
+            panelPrefs() {
+                const ok = this.panelCollapsed || {};
+                this.panelCollapsed = ok;
+                return ok;
+            }
+
+            setPanelCollapsed(name, collapsed) {
+                if (!this.panelCollapsed) this.panelCollapsed = {};
+                this.panelCollapsed[name] = collapsed;
+                try {
+                    localStorage.setItem('notetaker_panels', JSON.stringify(this.panelCollapsed));
+                } catch (e) { /* storage may be unavailable; ignore */ }
+            }
+
+            applyPanelCollapsed(name, panelEl) {
+                if (!panelEl) return;
+                const collapsed = !!(this.panelCollapsed && this.panelCollapsed[name]);
+                panelEl.classList.toggle('collapsed', collapsed);
+                const btn = panelEl.querySelector('.panel-toggle');
+                if (btn) btn.textContent = collapsed ? this.t('panel.show') : this.t('panel.hide');
+            }
+
+            /** Render the AI summary panel (stored on the note, never in content). */
+            renderSummaryPanel() {
+                const panel = document.getElementById('summaryPanel');
+                const body = document.getElementById('summaryBody');
+                if (!panel || !body) return;
+
+                const summary = (this.currentNote && this.currentNote.summary) || '';
+                if (!summary.trim()) {
+                    panel.style.display = 'none';
+                    body.textContent = '';
+                    return;
+                }
+                body.textContent = summary;
+                panel.style.display = 'block';
+                this.applyPanelCollapsed('summary', panel);
+            }
+
+            /** Render the AI checklist panel (stored on the note as JSON). */
             renderTodoPanel() {
-                const contentEl = document.getElementById('noteContent');
                 const panel = document.getElementById('todoPanel');
                 const list = document.getElementById('todoList');
-                if (!contentEl || !panel || !list) return;
+                if (!panel || !list) return;
 
-                const pattern = /^\s*-\s*\[( |x|X)\]\s*(.*)$/;
-                const items = [];
-                contentEl.value.split('\n').forEach((line) => {
-                    const m = line.match(pattern);
-                    if (m) items.push({ done: m[1].toLowerCase() === 'x', text: m[2].trim() });
-                });
+                const todos = (this.currentNote && Array.isArray(this.currentNote.todos))
+                    ? this.currentNote.todos
+                    : [];
 
-                if (!items.length) {
+                if (!todos.length) {
                     panel.style.display = 'none';
                     list.innerHTML = '';
                     return;
                 }
 
-                const readonly = contentEl.readOnly;
-                list.innerHTML = items.map((item, index) => `
+                const contentEl = document.getElementById('noteContent');
+                const readonly = contentEl ? contentEl.readOnly : false;
+                list.innerHTML = todos.map((item, index) => `
                     <label class="todo-item ${item.done ? 'done' : ''}">
                         <input type="checkbox" data-todo-index="${index}"
                                ${item.done ? 'checked' : ''} ${readonly ? 'disabled' : ''}>
                         <span>${this.escapeHtml(item.text || '')}</span>
                     </label>`).join('');
                 panel.style.display = 'block';
+                this.applyPanelCollapsed('todo', panel);
             }
 
-            /** Flip one checklist item in the content and auto-save. */
+            /** Tick / untick one checklist item and persist it. */
             toggleTodoItem(index, checked) {
-                const contentEl = document.getElementById('noteContent');
-                const pattern = /^(\s*-\s*\[)( |x|X)(\]\s*)(.*)$/;
-                let seen = -1;
-                const lines = contentEl.value.split('\n').map((line) => {
-                    const m = line.match(pattern);
-                    if (!m) return line;
-                    seen += 1;
-                    if (seen !== index) return line;
-                    return `${m[1]}${checked ? 'x' : ' '}${m[3]}${m[4]}`;
-                });
-                contentEl.value = lines.join('\n');
-                contentEl.dispatchEvent(new Event('input'));
+                if (!this.currentNote || !Array.isArray(this.currentNote.todos)) return;
+                if (!this.currentNote.todos[index]) return;
+                this.currentNote.todos[index].done = !!checked;
                 this.renderTodoPanel();
+                this.saveNote(true);
             }
 
             /** Pin / unpin a note (owner only). */

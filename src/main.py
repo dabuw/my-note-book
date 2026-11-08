@@ -129,6 +129,10 @@ def _ensure_note_columns():
             connection.execute(
                 text('ALTER TABLE note ADD COLUMN pinned BOOLEAN NOT NULL DEFAULT 0')
             )
+        if 'summary' not in existing:
+            connection.execute(text('ALTER TABLE note ADD COLUMN summary TEXT'))
+        if 'todos' not in existing:
+            connection.execute(text('ALTER TABLE note ADD COLUMN todos TEXT'))
         connection.execute(
             text('CREATE UNIQUE INDEX IF NOT EXISTS ix_note_share_token ON note (share_token)')
         )
