@@ -17,6 +17,7 @@ from src.routes.note import note_bp
 from src.routes.translate import translate_bp
 from src.routes.generate import generate_bp
 from src.routes.tags import tags_bp
+from src.routes.ai import ai_bp
 from src.routes.auth import auth_bp
 from src.models.note import Note
 
@@ -69,6 +70,7 @@ app.register_blueprint(auth_bp, url_prefix='/api')
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(note_bp, url_prefix='/api')
 app.register_blueprint(translate_bp, url_prefix='/api')
+app.register_blueprint(ai_bp, url_prefix='/api')
 app.register_blueprint(generate_bp, url_prefix='/api')
 app.register_blueprint(tags_bp)
 

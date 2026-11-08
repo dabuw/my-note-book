@@ -198,3 +198,36 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# --------------------------------------------------------------------------
+# Note rewriting helpers
+# --------------------------------------------------------------------------
+
+REWRITE_MODES = {
+    "polish": (
+        "You are a Chinese writing assistant. Rewrite the user's note so it reads "
+        "as clear, well-structured written Chinese. Keep every fact, name and "
+        "number; do not add new information, do not translate, do not prepend a "
+        "title. Return only the rewritten note."
+    ),
+    "summarize": (
+        "Summarise the user's note in 2-3 sentences of Chinese. Keep the key facts, "
+        "dates and names. Return only the summary, without any prefix like '摘要：'."
+    ),
+    "todos": (
+        "Extract every actionable task from the user's note as a Chinese checklist. "
+        "Return one task per line, each line starting with '- [ ] '. If the note "
+        "contains no actionable task, return an empty response."
+    ),
+}
+
+
+def rewrite(text: str, mode: str = "polish") -> str:
+    """Rewrite / summarise / extract todos from `text` using the configured model."""
+    system_prompt = REWRITE_MODES.get(mode, REWRITE_MODES["polish"])
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": text},
+    ]
+    return call_llm_model(DEFAULT_MODEL, messages).strip()

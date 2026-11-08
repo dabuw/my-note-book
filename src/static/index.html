@@ -222,6 +222,49 @@
             margin-bottom: 20px;
         }
 
+        .editor-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .editor-toolbar .form-label {
+            margin-bottom: 0;
+        }
+
+        .ai-tools {
+            display: flex;
+            gap: 6px;
+        }
+
+        .ai-tool-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-family: inherit;
+            color: #0f7a54;
+            background: #f2f9f5;
+            border: 1px solid rgba(15, 122, 84, 0.25);
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.15s ease;
+        }
+
+        .ai-tool-btn:hover:not(:disabled) {
+            background: #e3f4ec;
+            transform: translateY(-1px);
+        }
+
+        .ai-tool-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .form-label {
             display: block;
             margin-bottom: 8px;
@@ -777,7 +820,17 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="noteContent" data-i18n="form.content">内容</label>
+                        <div class="editor-toolbar">
+                            <label class="form-label" for="noteContent" data-i18n="form.content">内容</label>
+                            <div class="ai-tools" id="aiTools">
+                                <button class="ai-tool-btn" type="button" data-ai-mode="polish"
+                                        data-i18n="ai.polish" title="把内容整理成通顺的书面表达">✨ 润色</button>
+                                <button class="ai-tool-btn" type="button" data-ai-mode="summarize"
+                                        data-i18n="ai.summarize" title="生成 2-3 句摘要，插入到正文开头">📝 摘要</button>
+                                <button class="ai-tool-btn" type="button" data-ai-mode="todos"
+                                        data-i18n="ai.todos" title="从正文提取待办清单，追加到末尾">✅ 待办</button>
+                            </div>
+                        </div>
                         <textarea class="form-textarea" id="noteContent"
                                   data-i18n-placeholder="form.contentPlaceholder" placeholder="开始写你的笔记..."></textarea>
                     </div>
@@ -875,6 +928,9 @@
             'ai.title': '🤖 Generate Notes',
             'ai.placeholder': 'Describe what happened today, your thoughts, or anything you want turned into a note...',
             'ai.button': '🚀 Generate Notes',
+            'ai.polish': '✨ Polish',
+            'ai.summarize': '📝 Summary',
+            'ai.todos': '✅ To-dos',
             'notes.loading': 'Loading notes...',
             'btn.save': '💾 Save',
             'btn.delete': '🗑️ Delete',
@@ -909,6 +965,13 @@
                 'ai.quotaLeft': '（今日剩余 {0} 次免费 AI）',
                 'ai.quotaUsed': '（今日免费额度已用完）',
                 'err.ai_quota_exceeded': '今日 AI 体验次数已用完，输入密码后可无限使用，明天额度会重置',
+                'msg.aiWorking': 'AI 处理中…',
+                'msg.aiEmpty': '请先写点内容，再让 AI 处理',
+                'msg.aiEmptyResult': 'AI 没有返回内容，换个说法试试',
+                'msg.aiSummaryPrefix': '摘要：',
+                'msg.aiTodoHeading': '**待办事项**',
+                'msg.aiApplied': '已应用到正文，记得保存',
+                'msg.aiError': 'AI 处理失败：{0}',
                 'auth.login': '🔑 输入密码',
                 'auth.adminLogin': '🔑 管理员登录',
                 'auth.logout': '🚪 退出登录',
@@ -982,6 +1045,13 @@
                 'ai.quotaLeft': '({0} free AI calls left today)',
                 'ai.quotaUsed': '(daily free quota used up)',
                 'err.ai_quota_exceeded': 'Daily free AI trial used up. Sign in with the password for unlimited use; the quota resets tomorrow.',
+                'msg.aiWorking': 'AI is working…',
+                'msg.aiEmpty': 'Write something first, then let AI work on it',
+                'msg.aiEmptyResult': 'AI returned nothing, try rephrasing',
+                'msg.aiSummaryPrefix': 'Summary: ',
+                'msg.aiTodoHeading': '**To-dos**',
+                'msg.aiApplied': 'Applied to the note, remember to save',
+                'msg.aiError': 'AI failed: {0}',
                 'auth.login': '🔑 Enter password',
                 'auth.adminLogin': '🔑 Administrator sign-in',
                 'auth.logout': '🚪 Sign out',
@@ -1191,6 +1261,9 @@
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
                 document.getElementById('generateNotesBtn').addEventListener('click', () => this.generateNotes());
+                document.querySelectorAll('.ai-tool-btn').forEach((btn) => {
+                    btn.addEventListener('click', () => this.applyAiTool(btn.dataset.aiMode, btn));
+                });
                 
                 // Auto-save on content change (debounced)
                 let saveTimeout;
@@ -1395,6 +1468,61 @@
              * Turn an auth/permission failure into a clear prompt.
              * Returns true when the response was an auth problem already handled.
              */
+
+            /** Apply an AI rewrite (polish / summarize / todos) to the editor content. */
+            async applyAiTool(mode, btn) {
+                const contentEl = document.getElementById('noteContent');
+                const text = (contentEl.value || '').trim();
+                if (!text) {
+                    this.showMessage(this.t('msg.aiEmpty'), 'error');
+                    return;
+                }
+
+                const originalLabel = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = this.t('msg.aiWorking');
+                this.showMessage(this.t('msg.aiWorking'), 'loading');
+
+                try {
+                    const resp = await fetch('/api/ai/rewrite', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text, mode })
+                    });
+
+                    if (!resp.ok) {
+                        if (await this.handleAuthFailure(resp)) return;
+                        const err = await resp.json().catch(() => ({}));
+                        throw new Error(err.message || err.error || `Server error: ${resp.status}`);
+                    }
+
+                    const data = await resp.json();
+                    const result = (data.result || '').trim();
+                    if (!result) {
+                        this.showMessage(this.t('msg.aiEmptyResult'), 'error');
+                        return;
+                    }
+
+                    if (mode === 'polish') {
+                        contentEl.value = result;
+                    } else if (mode === 'summarize') {
+                        contentEl.value = `> ${this.t('msg.aiSummaryPrefix')}${result}\n\n${contentEl.value}`;
+                    } else {
+                        contentEl.value = `${contentEl.value.replace(/\s+$/, '')}\n\n${this.t('msg.aiTodoHeading')}\n${result}\n`;
+                    }
+
+                    // Reuse the existing debounced auto-save path.
+                    contentEl.dispatchEvent(new Event('input'));
+                    this.showMessage(this.t('msg.aiApplied'), 'success');
+                    if (!this.authenticated) this.loadAuthStatus();
+                } catch (e) {
+                    this.showMessage(this.t('msg.aiError', e.message), 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = originalLabel;
+                }
+            }
+
             async handleAuthFailure(resp) {
                 if (resp.status === 429) {
                     const data = await resp.json().catch(() => ({}));
