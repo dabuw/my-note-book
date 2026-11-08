@@ -55,9 +55,16 @@
 
         .main-content {
             display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 30px;
+            /* 侧栏固定宽度：1fr/2fr 会被标签行的 min-content 撑变形 */
+            grid-template-columns: 340px minmax(0, 1fr);
+            gap: 26px;
             flex: 1;
+            align-items: start;
+        }
+
+        .sidebar,
+        .note-editor {
+            min-width: 0;
         }
 
         .sidebar {
@@ -1288,6 +1295,30 @@
             color: var(--brand);
         }
 
+        /* ---- selection transition ---- */
+        @keyframes editorIn {
+            from {
+                opacity: 0.35;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        .note-editor.is-entering {
+            animation: editorIn 0.22s ease;
+        }
+
+        .note-item {
+            transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+        }
+
+        .note-item:active {
+            transform: scale(0.995);
+        }
+
         /* ---- floating layers ---- */
         .new-note-menu,
         .modal {
@@ -2431,6 +2462,13 @@
                 document.getElementById('noteEventTime').value = note.event_time || '';
                 document.getElementById('notePublic').checked = !!note.is_public;
                 document.getElementById('editorTitle').textContent = note.title || this.t('msg.untitled');
+                const editorEl = document.querySelector('.note-editor');
+                if (editorEl) {
+                    editorEl.classList.remove('is-entering');
+                    void editorEl.offsetWidth;   // 强制重排，让动画可以重放
+                    editorEl.classList.add('is-entering');
+                }
+
                 this.setReadOnly(!note.can_edit);
                 this.renderSummaryPanel();
                 this.renderTodoPanel();
