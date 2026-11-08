@@ -328,6 +328,18 @@
             letter-spacing: 0.3px;
         }
 
+        .btn-unshare {
+            background: #fff;
+            color: var(--text-2);
+            border: 1px solid var(--line);
+        }
+
+        .btn-unshare:hover {
+            color: var(--danger);
+            border-color: rgba(214, 69, 69, 0.35);
+            background: #fff7f7;
+        }
+
         .btn-share {
             background: #eaf6f0;
             color: #0f7a54;
@@ -1201,6 +1213,18 @@
             background: #b93a3a;
         }
 
+        .btn-unshare {
+            background: #fff;
+            color: var(--text-2);
+            border: 1px solid var(--line);
+        }
+
+        .btn-unshare:hover {
+            color: var(--danger);
+            border-color: rgba(214, 69, 69, 0.35);
+            background: #fff7f7;
+        }
+
         .btn-share {
             background: var(--brand-soft);
             color: var(--brand);
@@ -1515,6 +1539,8 @@
                     <h2 class="editor-title" id="editorTitle">选择一条笔记开始编辑</h2>
                     <div class="editor-actions" id="editorActions" style="display: none;">
                         <button class="btn btn-share" id="shareBtn" data-i18n="btn.share">🔗 分享</button>
+                        <button class="btn btn-unshare" id="unshareBtn" style="display:none;"
+                                data-i18n="btn.unshare">取消分享</button>
                         <button class="btn btn-save" id="saveBtn" data-i18n="btn.save">💾 保存</button>
                         <button class="btn btn-delete" id="deleteBtn" data-i18n="btn.delete">🗑️ 删除</button>
                     </div>
@@ -1677,6 +1703,7 @@
             'view.list': '📋 List',
             'view.timeline': '📅 Timeline',
             'btn.share': '🔗 Share',
+            'btn.unshare': 'Stop sharing',
             'share.title': '🔗 Share this note',
             'share.desc': 'Anyone with the link can read this note. No password needed.',
             'share.copy': 'Copy link',
@@ -2101,6 +2128,7 @@
                 bindPanelToggle('todo', 'todoToggle', 'todoPanel');
 
                 document.getElementById('shareBtn').addEventListener('click', () => this.openShare());
+                document.getElementById('unshareBtn').addEventListener('click', () => this.unshareCurrent());
                 document.getElementById('shareCloseBtn').addEventListener('click', () => this.closeShare());
                 document.getElementById('shareCopyBtn').addEventListener('click', () => this.copyShare());
                 document.getElementById('shareRevokeBtn').addEventListener('click', () => this.revokeShare());
@@ -2214,7 +2242,12 @@
                 if (group) group.style.display = this.authenticated ? 'block' : 'none';
 
                 const shareBtn = document.getElementById('shareBtn');
-                if (shareBtn) shareBtn.style.display = this.authenticated ? '' : 'none';
+                const canShare = !!(this.currentNote && this.currentNote.can_edit && this.currentNote.id);
+                if (shareBtn) shareBtn.style.display = canShare ? '' : 'none';
+                const unshareBtn = document.getElementById('unshareBtn');
+                if (unshareBtn) {
+                    unshareBtn.style.display = (canShare && this.currentNote.shared) ? '' : 'none';
+                }
 
                 // Hide every writing affordance from guests, not just disable it:
                 // a reviewer looking at a read-only site should not see input
@@ -2571,6 +2604,12 @@
                 }
 
                 this.setReadOnly(!note.can_edit);
+                const shareBtnEl = document.getElementById('shareBtn');
+                if (shareBtnEl) shareBtnEl.style.display = note.can_edit ? '' : 'none';
+                const unshareBtnEl = document.getElementById('unshareBtn');
+                if (unshareBtnEl) {
+                    unshareBtnEl.style.display = (note.can_edit && note.shared) ? '' : 'none';
+                }
                 this.renderSummaryPanel();
                 this.renderTodoPanel();
             }
@@ -2608,6 +2647,8 @@
             }
 
             createNewNote() {
+                const shareBtnNew = document.getElementById('shareBtn');
+                if (shareBtnNew) shareBtnNew.style.display = 'none';
                 // The server enforces this too; this is only for a clear message.
                 if (!this.authenticated) {
                     if (this.guestNoteLimit === 0) {
@@ -3241,9 +3282,29 @@
                     const data = await resp.json();
                     input.value = data.url;
                     this.currentNote.shared = true;
+                    const unshare = document.getElementById('unshareBtn');
+                    if (unshare) unshare.style.display = '';
                 } catch (e) {
                     input.value = '';
                     err.textContent = this.t('share.error');
+                }
+            }
+
+            /** 取消当前笔记的分享（直接在编辑器里操作，不用打开弹窗） */
+            async unshareCurrent() {
+                if (!this.currentNote || !this.currentNote.id) return;
+                try {
+                    const resp = await fetch(`/api/notes/${this.currentNote.id}/share`, { method: 'DELETE' });
+                    if (!resp.ok) {
+                        if (await this.handleAuthFailure(resp)) return;
+                        throw new Error('revoke failed');
+                    }
+                    this.currentNote.shared = false;
+                    const unshare = document.getElementById('unshareBtn');
+                    if (unshare) unshare.style.display = 'none';
+                    this.showMessage(this.t('share.revoked'), 'success');
+                } catch (e) {
+                    this.showMessage(this.t('share.error'), 'error');
                 }
             }
 

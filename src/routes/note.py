@@ -244,10 +244,14 @@ def delete_note(note_id):
 
 @note_bp.route('/notes/<int:note_id>/share', methods=['POST'])
 def share_note(note_id):
-    """Create (or return) a public read-only link for a note. Owner only."""
+    """Create (or return) a public link for a note.
+
+    The owner may share any note; a guest may share the note it created itself
+    (the same rule that governs editing).
+    """
     note = Note.query.get_or_404(note_id)
-    if not is_authenticated():
-        return jsonify({'error': 'auth_required', 'message': '该功能需要输入密码后使用'}), 401
+    if not _may_edit(note):
+        return jsonify({'error': 'forbidden', 'message': '只能分享自己创建的笔记'}), 403
 
     if not note.share_token:
         note.share_token = secrets.token_urlsafe(16)
@@ -261,10 +265,10 @@ def share_note(note_id):
 
 @note_bp.route('/notes/<int:note_id>/share', methods=['DELETE'])
 def unshare_note(note_id):
-    """Revoke the public link for a note. Owner only."""
+    """Revoke the public link for a note."""
     note = Note.query.get_or_404(note_id)
-    if not is_authenticated():
-        return jsonify({'error': 'auth_required', 'message': '该功能需要输入密码后使用'}), 401
+    if not _may_edit(note):
+        return jsonify({'error': 'forbidden', 'message': '只能操作自己创建的笔记'}), 403
 
     note.share_token = None
     db.session.commit()

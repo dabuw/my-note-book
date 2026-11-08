@@ -6,7 +6,7 @@ from datetime import timedelta
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from flask import Flask, render_template_string, send_from_directory
+from flask import Flask, jsonify, render_template_string, request, send_from_directory
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 from sqlalchemy import event
@@ -154,27 +154,81 @@ SHARE_PAGE = """<!doctype html>
 <title>{{ note.title }} · NoteTaker</title>
 <style>
   :root { color-scheme: light; }
-  body { margin:0; padding:48px 20px; background:#fdf8ec; color:#1f2937;
+  body { margin:0; padding:48px 20px; background:#f6f1e3; color:#1f2a24;
          font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',Arial,sans-serif; }
   .card { max-width:720px; margin:0 auto; background:#fff; border-radius:16px; padding:36px 40px;
-          box-shadow:0 8px 30px rgba(120,100,50,.12); }
+          box-shadow:0 10px 32px rgba(120,100,50,.12); }
   h1 { margin:0 0 8px; font-size:26px; color:#0f7a54; }
-  .meta { margin:0 0 20px; font-size:13px; color:#8a8f98; }
+  .meta { margin:0 0 22px; font-size:13px; color:#8a9790; }
+  .block { margin:0 0 20px; padding:14px 16px; border:1px solid #e6ebe8; border-radius:12px; background:#fbfdfb; }
+  .block-title { margin:0 0 8px; font-size:12px; font-weight:700; color:#0f7a54; letter-spacing:.2px; }
+  .summary { margin:0; font-size:14px; line-height:1.75; color:#374151; white-space:pre-wrap; }
   .content { white-space:pre-wrap; line-height:1.85; font-size:15px; }
+  .todo { display:flex; align-items:flex-start; gap:10px; padding:4px 0; font-size:14px; line-height:1.6; cursor:pointer; }
+  .todo input { width:17px; height:17px; margin-top:3px; accent-color:#0f7a54; cursor:pointer; }
+  .todo.done span { color:#9aa0a6; text-decoration:line-through; }
   .tags { margin-top:24px; display:flex; flex-wrap:wrap; gap:8px; }
   .tag { padding:3px 10px; border-radius:999px; background:#eaf6f0; color:#0f7a54; font-size:12px; }
   .foot { max-width:720px; margin:20px auto 0; text-align:center; font-size:12px; color:#9aa0a6; }
   .foot a { color:#0f7a54; text-decoration:none; }
+  .hint { margin:10px 0 0; font-size:11px; color:#9aa0a6; }
 </style>
 </head>
-<body>
+<body data-token="{{ note.share_token }}">
   <article class="card">
     <h1>{{ note.title }}</h1>
-    <p class="meta">{{ note.event_date or (note.updated_at.strftime('%Y-%m-%d') if note.updated_at else '') }}{% if note.event_time %} {{ note.event_time.strftime('%H:%M') }}{% endif %} · 来自 NoteTaker 的一条分享笔记</p>
+    <p class="meta">{{ note.event_date or (note.updated_at.strftime('%Y-%m-%d') if note.updated_at else '') }}{% if note.event_time %} {{ note.event_time.strftime('%H:%M') }}{% endif %} · 来自 NoteTaker 的分享笔记</p>
+
+    {% if note.summary %}
+    <section class="block">
+      <p class="block-title">📝 AI 摘要</p>
+      <p class="summary">{{ note.summary }}</p>
+    </section>
+    {% endif %}
+
     <div class="content">{{ note.content }}</div>
+
+    {% if todos %}
+    <section class="block" style="margin-top:22px;">
+      <p class="block-title">✅ 待办清单</p>
+      {% for todo in todos %}
+      <label class="todo {% if todo.done %}done{% endif %}">
+        <input type="checkbox" data-index="{{ loop.index0 }}" {% if todo.done %}checked{% endif %}>
+        <span>{{ todo.text }}</span>
+      </label>
+      {% endfor %}
+      <p class="hint">勾选会同步给持有这个链接的人</p>
+    </section>
+    {% endif %}
+
     {% if tags %}<div class="tags">{% for tag in tags %}<span class="tag">#{{ tag }}</span>{% endfor %}</div>{% endif %}
   </article>
   <p class="foot">由 <a href="https://notes.dabuw.online">NoteTaker</a> 分享 · 只读页面</p>
+
+  <script>
+    (function () {
+      var token = document.body.getAttribute('data-token');
+      document.querySelectorAll('.todo input[type=checkbox]').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+          var index = Number(cb.getAttribute('data-index'));
+          cb.disabled = true;
+          fetch('/s/' + token + '/todos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ index: index, done: cb.checked })
+          }).then(function (r) {
+            if (!r.ok) throw new Error('failed');
+            cb.closest('.todo').classList.toggle('done', cb.checked);
+          }).catch(function () {
+            cb.checked = !cb.checked;
+            alert('保存失败，请稍后重试');
+          }).finally(function () {
+            cb.disabled = false;
+          });
+        });
+      });
+    })();
+  </script>
 </body>
 </html>"""
 
@@ -188,7 +242,34 @@ def shared_note(token):
     note = Note.query.filter_by(share_token=token).first()
     if note is None:
         return '分享链接已失效', 404
-    return render_template_string(SHARE_PAGE, note=note, tags=note.get_tags())
+    return render_template_string(SHARE_PAGE, note=note, tags=note.get_tags(), todos=note.get_todos())
+
+
+@app.route('/s/<token>/todos', methods=['POST'])
+def shared_todo_toggle(token):
+    """Tick a checklist item from a shared page.
+
+    Anyone holding the link may tick items; the change is written back to the
+    note so the owner and other readers see the same state.
+    """
+    from src.models.note import Note
+
+    note = Note.query.filter_by(share_token=token).first()
+    if note is None:
+        return jsonify({'error': 'not_found'}), 404
+
+    data = request.get_json(silent=True) or {}
+    index = data.get('index')
+    done = bool(data.get('done'))
+
+    todos = note.get_todos()
+    if not isinstance(index, int) or index < 0 or index >= len(todos):
+        return jsonify({'error': 'invalid_index'}), 400
+
+    todos[index]['done'] = done
+    note.set_todos(todos)
+    db.session.commit()
+    return jsonify({'todos': note.get_todos()})
 
 
 @app.route('/api/health')
