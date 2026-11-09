@@ -206,28 +206,31 @@
         /* ---- new note split button + menu ---- */
         .new-note-row {
             position: relative;
-            display: flex;
-            gap: 6px;
             margin: 12px 0;
         }
 
         .new-note-row .new-note-btn {
-            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
             margin: 0;
+            background: var(--brand, #0f7a54);
         }
 
-        .new-note-caret {
-            width: 40px;
-            border: 1px solid rgba(15, 122, 84, 0.35);
-            border-radius: 10px;
-            background: #eaf6f0;
-            color: #0f7a54;
-            font-size: 13px;
-            cursor: pointer;
+        .new-note-row .new-note-btn:hover {
+            background: var(--brand-dark, #0b5e41);
         }
 
-        .new-note-caret:hover {
-            background: #dcefe5;
+        .new-note-caret-icon {
+            font-size: 11px;
+            opacity: 0.8;
+            transition: transform 0.16s ease;
+        }
+
+        .new-note-row.open .new-note-caret-icon {
+            transform: rotate(180deg);
         }
 
         .new-note-menu {
@@ -235,7 +238,7 @@
             top: 46px;
             right: 0;
             z-index: 60;
-            min-width: 150px;
+            min-width: 210px;
             padding: 6px;
             border: 1px solid #e3e8ee;
             border-radius: 12px;
@@ -246,15 +249,32 @@
         .new-note-menu button {
             display: block;
             width: 100%;
-            padding: 8px 10px;
+            padding: 9px 12px;
             border: 0;
             border-radius: 8px;
             background: transparent;
             font-family: inherit;
-            font-size: 13px;
             text-align: left;
             color: #374151;
             cursor: pointer;
+        }
+
+        .new-note-menu button strong {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .new-note-menu button em {
+            display: block;
+            margin-top: 2px;
+            font-style: normal;
+            font-size: 11px;
+            color: var(--text-3, #8a9790);
+        }
+
+        .new-note-menu button + button {
+            margin-top: 2px;
         }
 
         .new-note-menu button:hover {
@@ -1482,12 +1502,20 @@
                 <input type="text" class="search-box" id="searchBox"
                        data-i18n-placeholder="search.placeholder" placeholder="🔍 搜索笔记...">
                 <div class="new-note-row">
-                    <button class="new-note-btn" id="newNoteBtn" data-i18n="btn.newNote">✨ 新建笔记</button>
-                    <button class="new-note-caret" id="newNoteCaret" type="button"
-                            data-i18n-title="newNote.more" title="更多新建方式">▾</button>
+                    <button class="new-note-btn" id="newNoteBtn" type="button"
+                            data-i18n-title="newNote.more" title="选择新建方式">
+                        <span data-i18n="btn.newNote">✨ 新建笔记</span>
+                        <span class="new-note-caret-icon">▾</span>
+                    </button>
                     <div class="new-note-menu" id="newNoteMenu" style="display:none;">
-                        <button type="button" data-new-mode="manual" data-i18n="newNote.manual">✍️ 手动写</button>
-                        <button type="button" data-new-mode="ai" data-i18n="newNote.ai">🤖 AI 生成</button>
+                        <button type="button" data-new-mode="manual">
+                            <strong data-i18n="newNote.manual">✍️ 手动写</strong>
+                            <em data-i18n="newNote.manualDesc">自己写标题和内容</em>
+                        </button>
+                        <button type="button" data-new-mode="ai">
+                            <strong data-i18n="newNote.ai">🤖 AI 生成</strong>
+                            <em data-i18n="newNote.aiDesc">说一句话，自动整理成笔记</em>
+                        </button>
                     </div>
                 </div>
 
@@ -1517,11 +1545,11 @@
                 <!-- Generate Notes Section (owner only; hidden from guests) -->
                 <div id="aiPanel" style="display:none; margin: 15px 0; padding: 10px; background: #f2f9f5; border-radius: 8px; border-left: 4px solid #0f7a54;">
                     <h4 style="margin: 0 0 10px 0; color: #0f7a54; font-size: 14px;">
-                        <span data-i18n="ai.title">🤖 智能生成笔记</span>
+                        <span data-i18n="ai.title">🤖 AI 快速记录</span>
                         <span id="aiQuotaHint" class="ai-quota-hint"></span>
                     </h4>
                     <textarea id="naturalLanguageInput" data-i18n-placeholder="ai.placeholder"
-                              placeholder="描述今天发生了什么、你的想法，或任何想变成笔记的内容..."
+                              placeholder="随口记一句要做什么、什么时候做。例如：明天下午三点和产品评审需求，记得带原型图"
                               style="width: 100%; min-height: 80px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
                     <button class="btn" id="generateNotesBtn" style="margin-top: 8px; width: 100%; font-size: 13px; padding: 8px;"
                             data-i18n="ai.button">🚀 生成笔记</button>
@@ -1693,12 +1721,14 @@
             'guest.notice': '📖 Read-only showcase. Notes are maintained by the administrator.',
             'tagCloud.title': '🏷️ Tag Cloud',
             'tagCloud.loading': 'Loading tags...',
-            'ai.title': '🤖 Generate Notes',
-            'ai.placeholder': 'Describe what happened today, your thoughts, or anything you want turned into a note...',
+            'ai.title': '🤖 Quick capture with AI',
+            'ai.placeholder': 'Jot down what you need to do and when — e.g. review requirements with product at 3pm tomorrow, bring the prototype',
             'ai.button': '🚀 Generate Notes',
             'newNote.more': 'More ways to create a note',
             'newNote.manual': '✍️ Write manually',
+            'newNote.manualDesc': 'Type the title and content yourself',
             'newNote.ai': '🤖 Generate with AI',
+            'newNote.aiDesc': 'One sentence in, a structured note out',
             'editor.back': 'Back to list',
             'view.list': '📋 List',
             'view.timeline': '📅 Timeline',
@@ -2081,7 +2111,19 @@
             }
 
             bindEvents() {
-                document.getElementById('newNoteBtn').addEventListener('click', () => this.createNewNote());
+                // 点击「新建笔记」展开方式选择（手动写 / AI 生成）
+                const newNoteMenu = document.getElementById('newNoteMenu');
+                const newNoteRow = newNoteMenu.closest('.new-note-row');
+                const closeNewNoteMenu = () => {
+                    newNoteMenu.style.display = 'none';
+                    newNoteRow.classList.remove('open');
+                };
+                document.getElementById('newNoteBtn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const willOpen = newNoteMenu.style.display !== 'block';
+                    newNoteMenu.style.display = willOpen ? 'block' : 'none';
+                    newNoteRow.classList.toggle('open', willOpen);
+                });
 
                 // 移动端：从编辑区返回列表
                 document.getElementById('editorBackBtn').addEventListener('click', () => {
@@ -2090,15 +2132,9 @@
                 });
 
                 // 新建笔记下拉：手动写 / AI 生成
-                const caret = document.getElementById('newNoteCaret');
-                const menu = document.getElementById('newNoteMenu');
-                caret.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-                });
-                menu.querySelectorAll('button').forEach((btn) => {
+                newNoteMenu.querySelectorAll('button').forEach((btn) => {
                     btn.addEventListener('click', () => {
-                        menu.style.display = 'none';
+                        closeNewNoteMenu();
                         if (btn.dataset.newMode === 'ai') {
                             this.aiPanelOpen = true;
                             this.updateAuthUI();
@@ -2109,7 +2145,7 @@
                         }
                     });
                 });
-                document.addEventListener('click', () => { menu.style.display = 'none'; });
+                document.addEventListener('click', closeNewNoteMenu);
                 document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
