@@ -8,6 +8,7 @@ from src.auth import (
     current_role,
     guest_note_limit,
     is_authenticated,
+    is_demo,
     serialize,
     visible_notes_query,
 )
@@ -17,17 +18,23 @@ note_bp = Blueprint('note', __name__)
 
 
 def _may_edit(note):
-    """Guests may only touch the note they created; the owner may edit all."""
+    """Owner edits real notes, demo edits demo notes, guest edits its own."""
     if is_authenticated():
-        return True
+        return not note.is_demo
+    if is_demo():
+        return bool(note.is_demo)
     ip = client_ip()
     return note.author_ip is not None and note.author_ip == ip
 
 
 def _may_read(note):
-    """Guests may read public notes plus the note they created themselves."""
+    """Owner reads real notes, demo reads demo notes, guest reads public + its own."""
     if is_authenticated():
-        return True
+        return not note.is_demo
+    if is_demo():
+        return bool(note.is_demo)
+    if note.is_demo:
+        return False
     if note.is_public:
         return True
     ip = client_ip()
@@ -61,8 +68,10 @@ def create_note():
 
         ip = client_ip()
         authenticated = is_authenticated()
+        demo = is_demo()
 
-        if not authenticated:
+        # 演示账号不占游客额度，创建出来的笔记归入演示数据
+        if not authenticated and not demo:
             limit = guest_note_limit()
             if limit == 0:
                 return (
@@ -88,8 +97,9 @@ def create_note():
 
         note = Note(title=data['title'], content=data['content'])
         note.set_tags(data.get('tags'))
-        note.author_ip = None if authenticated else ip
-        # Guests are never allowed to publish content.
+        note.author_ip = 'demo' if demo else (None if authenticated else ip)
+        note.is_demo = demo
+        # 游客和演示账号都不能把内容设为公开。
         note.is_public = bool(data.get('is_public')) if authenticated else False
 
         event_date = data.get('event_date')

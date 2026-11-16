@@ -36,11 +36,32 @@ def client_ip():
 
 
 def is_authenticated():
+    """Owner session (full access). The demo account is a separate role."""
     return session.get("role") == "user"
 
 
+def is_demo():
+    return session.get("role") == "demo"
+
+
 def current_role():
-    return "user" if is_authenticated() else "guest"
+    if is_authenticated():
+        return "user"
+    if is_demo():
+        return "demo"
+    return "guest"
+
+
+def demo_password():
+    return os.environ.get("DEMO_PASSWORD") or ""
+
+
+def check_demo_password(candidate):
+    """Constant-time check for the public demo password (empty disables demo)."""
+    expected = demo_password()
+    if not expected or not candidate or not isinstance(candidate, str):
+        return False
+    return hmac.compare_digest(candidate.encode("utf-8"), expected.encode("utf-8"))
 
 
 def expected_password():
@@ -90,10 +111,17 @@ def visible_notes_query():
     """Base query already scoped to what the current viewer is allowed to read."""
     from src.models.note import Note
 
+    if is_demo():
+        # 演示账号只能看到演示数据
+        return Note.query.filter(Note.is_demo.is_(True))
     if is_authenticated():
-        return Note.query
+        # 真实用户看不到演示数据
+        return Note.query.filter(Note.is_demo.is_(False))
     ip = client_ip()
-    return Note.query.filter(db.or_(Note.is_public.is_(True), Note.author_ip == ip))
+    return Note.query.filter(
+        Note.is_demo.is_(False),
+        db.or_(Note.is_public.is_(True), Note.author_ip == ip),
+    )
 
 
 def serialize(note):
@@ -171,11 +199,18 @@ def _ai_used_today(ip):
     return count if day == _today() else 0
 
 
+def demo_ai_daily_limit():
+    try:
+        return max(0, int(os.environ.get("DEMO_AI_DAILY_LIMIT", "20")))
+    except (TypeError, ValueError):
+        return 20
+
+
 def ai_quota_remaining():
     """Remaining AI calls for the caller, or None when unlimited (owner)."""
     if is_authenticated():
         return None
-    limit = guest_ai_daily_limit()
+    limit = demo_ai_daily_limit() if is_demo() else guest_ai_daily_limit()
     with _ai_usage_lock:
         return max(0, limit - _ai_used_today(client_ip()))
 

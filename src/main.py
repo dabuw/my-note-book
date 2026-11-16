@@ -133,6 +133,13 @@ def _ensure_note_columns():
             connection.execute(text('ALTER TABLE note ADD COLUMN summary TEXT'))
         if 'todos' not in existing:
             connection.execute(text('ALTER TABLE note ADD COLUMN todos TEXT'))
+        if 'is_demo' not in existing:
+            connection.execute(
+                text('ALTER TABLE note ADD COLUMN is_demo BOOLEAN NOT NULL DEFAULT 0')
+            )
+        connection.execute(
+            text('CREATE INDEX IF NOT EXISTS ix_note_is_demo ON note (is_demo)')
+        )
         connection.execute(
             text('CREATE UNIQUE INDEX IF NOT EXISTS ix_note_share_token ON note (share_token)')
         )
@@ -142,6 +149,13 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
     _ensure_note_columns()
+
+    # 演示账号数据（未配置 DEMO_PASSWORD 时自动跳过）
+    try:
+        from src.demo_data import ensure_demo_data
+        ensure_demo_data()
+    except Exception as exc:  # 演示数据失败不影响主流程启动
+        app.logger.warning("demo data init failed: %s", exc)
 
 
 

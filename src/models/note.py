@@ -34,6 +34,8 @@ class Note(db.Model):
     is_public = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
     # When set, the note is readable at /s/<token> without a password.
     share_token = db.Column(db.String(64), nullable=True, unique=True, index=True)
+    # Demo account data: isolated from real notes, reset daily.
+    is_demo = db.Column(db.Boolean, nullable=False, default=False, server_default="0", index=True)
     # Owner-only: pinned notes sort above the rest.
     pinned = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
     # AI generated summary, shown above the content (never mixed into it).
@@ -115,7 +117,9 @@ class Note(db.Model):
         themselves; the logged-in owner may edit everything.
         """
         if role == 'user':
-            can_edit = True
+            can_edit = not self.is_demo
+        elif role == 'demo':
+            can_edit = bool(self.is_demo)
         else:
             can_edit = self.author_ip is not None and self.author_ip == viewer_ip
 

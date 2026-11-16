@@ -1774,6 +1774,8 @@
                 'role.loggedIn': '✅ 已登录（完整权限）',
                 'role.readonly': '📖 只读浏览',
                 'role.guest': '👤 游客模式',
+                'role.demo': '🧪 演示账号',
+                'role.hintDemo': '数据每日重置，可随意编辑',
                 'role.hintReadonly': '笔记由管理员维护',
                 'role.hintQuota': '可创建 {0} 条笔记，仅自己可见',
                 'role.hintQuotaUsed': '创建额度已用完，需要获得管理员权限',
@@ -1870,6 +1872,8 @@
                 'role.loggedIn': '✅ Signed in (full access)',
                 'role.readonly': '📖 Read-only',
                 'role.guest': '👤 Guest mode',
+                'role.demo': '🧪 Demo account',
+                'role.hintDemo': 'Resets daily — edit freely',
                 'role.hintReadonly': 'Notes are maintained by the administrator',
                 'role.hintQuota': 'You can create {0} note(s), visible only to you',
                 'role.hintQuotaUsed': 'Guest quota used up; administrator access required',
@@ -1977,6 +1981,8 @@
                 this.viewMode = 'list';
                 // AI 面板默认收起，从「新建笔记 → AI 生成」打开
                 this.aiPanelOpen = false;
+                // 演示账号（role=demo）：数据隔离、每日重置
+                this.isDemo = false;
                 try {
                     this.panelCollapsed = JSON.parse(localStorage.getItem('notetaker_panels') || '{}');
                 } catch (e) {
@@ -2229,6 +2235,7 @@
                     const data = await resp.json();
                     this.role = data.role || 'guest';
                     this.authenticated = !!data.authenticated;
+                    this.isDemo = !!data.is_demo || this.role === 'demo';
                     if (data.guest_note_limit !== undefined) {
                         this.guestNoteLimit = data.guest_note_limit;
                     }
@@ -2252,7 +2259,12 @@
                 // (used while it is filed as a non-interactive service).
                 const readOnlySite = !this.authenticated && this.guestNoteLimit === 0;
 
-                if (this.authenticated) {
+                if (this.isDemo) {
+                    badge.textContent = this.t('role.demo');
+                    badge.classList.add('role-user');
+                    hint.textContent = this.t('role.hintDemo');
+                    authBtn.textContent = this.t('auth.logout');
+                } else if (this.authenticated) {
                     badge.textContent = this.t('role.loggedIn');
                     badge.classList.add('role-user');
                     hint.textContent = '';
@@ -2297,7 +2309,7 @@
                 // AI features: the owner is unlimited, guests get a daily quota.
                 const aiPanel = document.getElementById('aiPanel');
                 const aiQuotaHint = document.getElementById('aiQuotaHint');
-                const guestAiAllowed = !this.authenticated && (this.aiQuota === null || this.aiQuota > 0);
+                const guestAiAllowed = !this.authenticated && (this.aiQuota === null || this.aiQuota >= 0);
                 if (aiPanel) {
                     const allowed = this.authenticated || guestAiAllowed;
                     aiPanel.style.display = (allowed && this.aiPanelOpen) ? 'block' : 'none';
