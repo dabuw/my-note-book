@@ -13,6 +13,9 @@ services:
     volumes:
       # SQLite lives on the host so the data survives image rebuilds.
       - ./data:/app/database
+      # 代码也挂载进容器：服务器拉取依赖很慢，改代码后只需 restart，
+      # 不必每次重新构建镜像（镜像里仍保留一份完整代码作为兜底）。
+      - ./src:/app/src
     healthcheck:
       test:
         - CMD
