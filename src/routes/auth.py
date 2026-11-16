@@ -7,6 +7,7 @@ any endpoint.
 
 from flask import Blueprint, jsonify, request, session
 
+from src.demo_data import ensure_demo_data
 from src.auth import (
     ai_quota_remaining,
     check_demo_password,
